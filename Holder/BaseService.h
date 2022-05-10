@@ -15,9 +15,10 @@
 namespace holder::service
 {
 
-	template<typename Dispatcher>
+	template<typename Dispatcher,
+			 typename Base>
 	class BaseService : public Dispatcher,
-		public IService,
+		public Base,
 		public std::enable_shared_from_this<BaseService<Dispatcher> > ,
 		public base::startup::ITaskStateListener
 	{
@@ -26,8 +27,10 @@ namespace holder::service
 
 		static_assert(std::is_base_of_v<messages::IMessageDispatcher, Dispatcher>,
 			"Dispatcher must implement messages::IMessageDispatcher");
-		static_assert(std::is_base_of_v<messages::IMessageDispatcher, Dispatcher>,
+		static_assert(std::is_base_of_v<base::IExecutor, Dispatcher>,
 			"Dispatcher must implement base::IExecutor");
+		static_assert(std::is_base_of_v<IService, Base>,
+			"Base must inherit from IService");
 
 		struct Dependency_
 		{

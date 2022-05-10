@@ -187,6 +187,7 @@
     <ClInclude Include="IProxy.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="ISharedObject.h" />
+    <ClInclude Include="ITextService.h" />
     <ClInclude Include="MessageDequeDispatcher.h" />
     <ClInclude Include="Messaging.h" />
     <ClInclude Include="MiniSpinMutex.h" />

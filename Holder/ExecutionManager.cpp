@@ -244,10 +244,203 @@ impl_ns::ExecutionManager::ExecutorThread::ExecutorThread(ThreadID id,
 	
 }
 
+// TimerThread
+impl_ns::ExecutionManager::TimerThread::TimerThread()
+	:m_thread(&ExecutionManager::TimerThread::operator(), this)
+{
+}
+
+void impl_ns::ExecutionManager::TimerThread::DoomMe()
+{
+	m_threadDoomed.store(true);
+}
+void impl_ns::ExecutionManager::TimerThread::JoinMe()
+{
+	m_thread.join();
+}
+
+void impl_ns::ExecutionManager::TimerThread::SetTimer(const char* pTimerName,
+	unsigned long microInterval,
+	bool repeatingTimer,
+	TimerID timerID,
+	std::shared_ptr<ITimerCallback> pCallback)
+{
+	// Convert the duration from microseconds to the system specific steady clock
+	std::chrono::microseconds usInterval{ microInterval };
+
+	auto clockInterval =
+		std::chrono::duration_cast<typename std::chrono::steady_clock::duration>(usInterval);
+
+	TimerMessage timerMsg;
+	timerMsg.tag = TimerInstructionTag::Set;
+	timerMsg.timerDef.timerName = pTimerName;
+	timerMsg.timerDef.timeInterval = clockInterval;
+	timerMsg.timerDef.repeatingTimer = repeatingTimer;
+	timerMsg.timerDef.timerID = timerID;
+	timerMsg.timerDef.pCallback = std::move(pCallback);
+
+	std::unique_lock lk(m_mutexInstructions);
+	m_messages.push_back(std::move(timerMsg));
+	m_cvInstructions.notify_one();
+}
+
+void impl_ns::ExecutionManager::TimerThread::CancelTimer(const char* pTimerName)
+{
+	TimerMessage timerMsg;
+	timerMsg.tag = TimerInstructionTag::Cancel;
+	timerMsg.timerDef.timerName = pTimerName;
+
+	std::unique_lock lk(m_mutexInstructions);
+	m_messages.push_back(std::move(timerMsg));
+	m_cvInstructions.notify_one();
+}
+
+
+void impl_ns::ExecutionManager::TimerThread::operator()()
+{
+	std::deque<TimerMessage> msgs;
+
+	while (!m_threadDoomed.load())
+	{
+		{
+			std::unique_lock lk(m_mutexInstructions);
+			std::swap(msgs, m_messages);
+		}
+
+		while (!msgs.empty())
+		{
+			ProcessTimerMessage(msgs.front());
+			msgs.pop_front();
+		}
+
+		// Process exactly one message
+		if (!m_timerPriorities.empty())
+		{
+			TimerPriorityEntry topTimer = m_timerPriorities.top();
+
+			// Get the current time 
+			std::chrono::time_point<std::chrono::steady_clock> curTime = std::chrono::steady_clock::now();
+
+			if (curTime >= topTimer.nextBeat)
+			{
+				auto timerAction = OnTimerDue(topTimer);
+
+				m_timerPriorities.pop();
+
+				if (timerAction == TimerAction::Reinsert)
+				{
+					m_timerPriorities.push(topTimer);
+				}
+			}
+			else
+			{
+				std::unique_lock lk(m_mutexInstructions);
+				m_cvInstructions.wait_until(lk, topTimer.nextBeat);
+			}
+		}
+		else
+		{
+			// No timers -- wait for events
+			std::unique_lock lk(m_mutexInstructions);
+			m_cvInstructions.wait(lk);
+		}
+	}
+
+}
+
+void impl_ns::ExecutionManager::TimerThread::ProcessTimerMessage(const TimerMessage& msg)
+{
+	// Add or set a timer
+	if (msg.tag == TimerInstructionTag::Set)
+	{
+		// Find the timer with the given name
+		bool timerFound{ false };
+		for (auto& timerState : m_timerStates)
+		{
+			if (timerState.second.timerDef.timerName == msg.timerDef.timerName)
+			{
+				// Update
+				timerState.second.recalibrate = true;
+				timerState.second.timerDef = msg.timerDef;
+				timerFound = true;
+				break;
+			}
+		}
+
+		if (!timerFound)
+		{
+			// Add a new timer.  Also give it its first entry in the priority queue
+			size_t newTimerIndex = m_nextTimerIndex++;
+			auto emplResult = m_timerStates.emplace(newTimerIndex, TimerStateWrapper());
+
+			emplResult.first->second.recalibrate = true;
+			emplResult.first->second.timerDef = msg.timerDef;
+
+			TimerPriorityEntry timerEntry;
+			timerEntry.timerIndex = newTimerIndex;
+			timerEntry.nextBeat = std::chrono::steady_clock::now();
+			timerEntry.nextBeat += msg.timerDef.timeInterval;
+		}
+	}
+	else if (msg.tag == TimerInstructionTag::Cancel)
+	{
+		// Cancel a timer
+		// Find it and remove it from the map
+		for (auto itTimer = m_timerStates.begin();
+			itTimer != m_timerStates.end();
+			++itTimer)
+		{
+			if (itTimer->second.timerDef.timerName == msg.timerDef.timerName)
+			{
+				m_timerStates.erase(itTimer);
+				break;
+			}
+		}
+	}
+
+}
+
+impl_ns::ExecutionManager::TimerThread::TimerAction 
+	impl_ns::ExecutionManager::TimerThread::OnTimerDue(TimerPriorityEntry& timerEntry)
+{
+	bool shouldRemoveFromMap{ false };
+	TimerAction retValue{ TimerAction::Reinsert };
+
+	// Look up the timer
+	auto itTimer = m_timerStates.find(timerEntry.timerIndex);
+
+	if (itTimer == m_timerStates.end())
+	{
+		return TimerAction::Remove;
+	}
+
+	itTimer->second.timerDef.pCallback->OnTimer(itTimer->second.timerDef.timerID);
+
+	if (!itTimer->second.recalibrate
+		&& !itTimer->second.timerDef.repeatingTimer)
+	{
+		retValue = TimerAction::Remove;
+		shouldRemoveFromMap = true;
+	}
+
+	if (shouldRemoveFromMap)
+	{
+		m_timerStates.erase(itTimer);
+	}
+	else
+	{
+		// Otherwise, update the next wakeup state
+		timerEntry.nextBeat += itTimer->second.timerDef.timeInterval;
+		// Set recalibrate to false
+		itTimer->second.recalibrate = false;
+	}
+	return retValue;
+}
+
 impl_ns::ExecutionManager::ExecutionManager()
 	:m_idleTimeout(SingletonConfig::GetInstance().GetDurationUS("execution_microsecond_wait"))
 {
-
+	m_pTimerThread.reset(new TimerThread());
 }
 
 void impl_ns::ExecutionManager::LockShop(bool sendTermination)
@@ -263,7 +456,7 @@ void impl_ns::ExecutionManager::LockShop(bool sendTermination)
 			thread.second->PostSignalAll(ExecutorSignalType::RequestTermination);
 		}
 	}
-	m_lockedShop = true;
+	LockedShopUpdateState();
 	m_cvExecution.notify_all();
 }
 
@@ -299,6 +492,8 @@ impl_ns::ExecutionManager::~ExecutionManager()
 	{
 		pThread->JoinMe();
 	}
+
+	m_pTimerThread->JoinMe();
 
 }
 
@@ -389,6 +584,27 @@ bool impl_ns::ExecutionManager::SignalExecutor(ExecutorID executorId, ExecutorSi
 	return false;
 }
 
+bool impl_ns::ExecutionManager::SetTimer(const char* pTimerName,
+	unsigned long microInterval,
+	bool repeatingTimer,
+	TimerID timerID,
+	std::shared_ptr<ITimerCallback> pCallback)
+{
+	if (!pCallback)
+	{
+		return false;
+	}
+
+	m_pTimerThread->SetTimer(pTimerName, microInterval, repeatingTimer, timerID,
+		std::move(pCallback));
+	return true;
+}
+
+void impl_ns::ExecutionManager::CancelTimer(const char* pTimerName)
+{
+	m_pTimerThread->CancelTimer(pTimerName);
+}
+
 void impl_ns::ExecutionManager::RemoveExecutors(const std::vector<ExecutorID>& toRemove)
 {
 	std::unique_lock lk{ m_mutex };
@@ -423,9 +639,20 @@ void impl_ns::ExecutionManager::RemoveThread(ThreadID threadId)
 		// This works on the assumption that execution should finish when all threads exit
 		// This could of course be wrong -- the controlling thread may want to repopulate the 
 		// execution manager.  But unless this is done, shutdown is not safe.
-		m_lockedShop = true;
+		LockedShopUpdateState();
 	}
 	m_cvExecution.notify_all();
+}
+
+
+
+void impl_ns::ExecutionManager::LockedShopUpdateState()
+{
+	if (!m_lockedShop)
+	{
+		m_lockedShop = true;
+		m_pTimerThread->DoomMe();
+	}
 }
 
 impl_ns::ExecutionManager& impl_ns::ExecutionManager::GetInstance()

@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <shared_mutex>
 #include <chrono>
+#include <queue>
 
 namespace holder::base
 {
@@ -38,12 +39,33 @@ namespace holder::base
 			SignalExecutor
 		};
 
+		enum class TimerInstructionTag
+		{
+			Set,
+			Cancel
+		};
+
 		struct ExecutionInstructionMessage
 		{
 			ExecutionInstructionTag instructionTag;
 			ExecutorSignalType signalType;
 			ExecutorID execId;
 			std::shared_ptr<IExecutor> executor;
+		};
+
+		struct TimerDefinition
+		{
+			std::string timerName;
+			typename std::chrono::steady_clock::duration timeInterval;
+			bool repeatingTimer;
+			TimerID timerID;
+			std::shared_ptr<ITimerCallback> pCallback;
+		};
+
+		struct TimerMessage
+		{
+			TimerInstructionTag tag;
+			TimerDefinition timerDef;
 		};
 
 		class ExecutorThread 
@@ -130,6 +152,87 @@ namespace holder::base
 			std::vector<ExecutorState> m_executors;
 		};
 
+		// TODO: If lookup by name is too slow, consider introucing a real ID
+
+		// For the sake of simplicity, only new timers are inserted into the priority queue
+		// during processing of updates
+		// Other timers are left alone to fire.
+		// This prevents unexpected upheavals of the queue.
+
+		// To get around this, remove and add a timer.  The old timer will remain in the priority queue
+		// but will be ignored and finally removed when its turn comes.
+
+		class TimerThread
+		{
+		private:
+			struct TimerPriorityEntry
+			{
+				std::chrono::time_point<std::chrono::steady_clock> nextBeat;
+				size_t timerIndex;
+
+				bool operator < (const TimerPriorityEntry& other) const
+				{
+					// Priority queues are sorted "largest-first" so we need to reverse the sense
+					return nextBeat > other.nextBeat;
+				}
+			};
+
+			struct TimerStateWrapper
+			{
+				// Set to true when the timer arguments were changed
+				// Currently used to prevent immediate removal of one-shot timers when
+				// they are recalibrated
+				bool recalibrate;
+				TimerDefinition timerDef;
+			};
+
+			enum class TimerAction
+			{
+				Reinsert,
+				Remove
+			};
+
+
+		public:
+			TimerThread();
+
+			void DoomMe();
+			void JoinMe();
+
+			void SetTimer(const char* pTimerName,
+				unsigned long microInterval,
+				bool repeatingTimer,
+				TimerID timerID,
+				std::shared_ptr<ITimerCallback> pCallback);
+			
+			void CancelTimer(const char* pTimerName);
+		private:
+			void ProcessTimerMessage(const TimerMessage& msg);
+
+			// Called when a timer is "due" in the sense that it is past its deadline
+			// dataLock is provided so the mutex can be unlocked temporarily while 
+			// making the callback
+			TimerAction OnTimerDue(TimerPriorityEntry& timerEntry);
+
+			void operator()();
+
+			std::thread m_thread;
+
+			// NOTE:  This mutex protects ONLY the deque!
+			// However, the wait function uses the top of the priority queue, which is local
+			std::mutex m_mutexInstructions;
+			std::condition_variable m_cvInstructions;
+
+			std::deque<TimerMessage> m_messages;
+
+			std::unordered_map<size_t, TimerStateWrapper> m_timerStates;
+			std::priority_queue<TimerPriorityEntry> m_timerPriorities;
+			size_t m_nextTimerIndex{ 0 };
+
+			// Atomic here
+			std::atomic<bool>  m_threadDoomed;
+		};
+
 	public:
 		static ExecutionManager& GetInstance();
 
@@ -150,6 +253,15 @@ namespace holder::base
 		// Returns when all threads are joinable.
 		void RunLoop(std::chrono::microseconds wakeUpTime);
 
+		// Timer creation
+		bool SetTimer(const char* pTimerName,
+			unsigned long microInterval,
+			bool repeatingTimer,
+			TimerID timerID,
+			std::shared_ptr<ITimerCallback> pCallback);
+
+		void CancelTimer(const char* pTimerName);
+
 	private:
 		ExecutionManager();
 		~ExecutionManager();
@@ -158,6 +270,7 @@ namespace holder::base
 		// Called only by inner-class objects
 		void RemoveThread(ThreadID threadId);
 		void RemoveExecutors(const std::vector<ExecutorID>& toRemove);
+		void LockedShopUpdateState();
 
 		// TODO:  Since "signal" may be called quite often, is there a better way to associate
 		// executor IDs to threads?
@@ -169,6 +282,8 @@ namespace holder::base
 		std::unordered_map<ExecutorID, ThreadID> m_executorMap;
 		std::unordered_map<std::string, ThreadID>  m_threadNameMap;
 		std::unordered_map<ThreadID, std::shared_ptr<ExecutorThread> >  m_threadMap;
+
+		std::unique_ptr<TimerThread> m_pTimerThread;
 
 		ThreadID m_nextThread{ 0 };
 		ExecutorID m_nextExec{ 0 };

@@ -173,5 +173,8 @@
     <ClInclude Include="BaseClientObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ITextService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
