@@ -9,28 +9,29 @@
 #include <vector>
 #include <type_traits>
 #include <shared_mutex>
+#include <memory>
 
 namespace holder::service
 {
 
-	template<typename D, 
-		typename Proxy, 
-		typename Client>
+	template<typename D, typename Proxy, typename Client>
 	class BaseServiceObject : public messages::IMessageListener,
-		public std::enable_shared_from_this<BaseServiceObject>
+		public std::enable_shared_from_this<BaseServiceObject<D, Proxy, Client> >
 	{
+	private:
+		using ObjType = BaseServiceObject<D, Proxy, Client>;
 		static_assert(std::is_base_of_v<BaseProxy, Proxy>, "Proxy must derive from BaseProxy");
 		static_assert(std::is_base_of_v<BaseClientObject, Client>, "Client must derive from BaseClientObject");
 	public:
 		void OnMessage(const std::shared_ptr<messages::IMessage>& pMsg,
-			messages::DispatchID dispatchId) override
+			messages::DispatchID dispatchID) override
 		{
 			Client* pClient{ nullptr };
 
 			{
 				std::shared_lock lk{ m_mutex };
 
-				auto itClient = m_clientMap.find(dispatchId);
+				auto itClient = m_clientMap.find(dispatchID);
 
 				if (itClient != m_clientMap.end())
 				{
@@ -57,6 +58,10 @@ namespace holder::service
 		}
 
 	protected:
+		BaseServiceObject(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
+			:m_pLocalDispatcher(pLocalDispatcher)
+		{ }
+
 		std::shared_ptr<IServiceLink>
 			CreateProxy_(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
 		{
@@ -65,7 +70,7 @@ namespace holder::service
 			auto pLocalDispatcher = m_pLocalDispatcher.lock();
 			std::shared_ptr<Proxy> pProxy;
 
-			if (!pDispatcher)
+			if (!pLocalDispatcher)
 			{
 				// Where is the dispatcher?  Can't create proxy
 				return pProxy;
@@ -79,7 +84,7 @@ namespace holder::service
 
 			// First create a receiver for this client object
 			messages::ReceiverID receiverID
-				= pLocalDispatcher->CreateReceiver(shared_from_this(),
+				= pLocalDispatcher->CreateReceiver(std::enable_shared_from_this<ObjType>::shared_from_this(),
 					std::make_shared<ServiceMessageFilter>(),
 					clientID);
 
@@ -93,7 +98,7 @@ namespace holder::service
 			// Now create the object
 			auto emplResult = m_clientMap.emplace(std::piecewise_construct,
 				std::forward_as_tuple(clientID),
-				std::forward_as_tuple(static_cast<D&>(this),
+				std::forward_as_tuple(static_cast<D&>(*this),
 					clientID,
 					receiverID,
 					pProxyEndpoint));

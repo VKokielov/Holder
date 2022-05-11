@@ -11,7 +11,7 @@ namespace holder::base
 	private:
 		using TypedArgs = typename Interface::Args;
 		static_assert(std::is_base_of_v<Interface, Product>, "Product must be derived from Interface");
-		static_assert(std::is_base_of_v<IAppArgument, TypedArgs>, "TypedArgs must be derived from IAppArgument")
+		static_assert(std::is_base_of_v<IAppArgument, TypedArgs>, "TypedArgs must be derived from IAppArgument");
 	public:
 		Interface* Create(const IAppArgument& args) override
 		{

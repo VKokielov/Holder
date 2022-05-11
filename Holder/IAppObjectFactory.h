@@ -15,7 +15,7 @@ namespace holder::base
 	};
 
 	template<typename Interface>
-	class ITypedAppObjectFactory
+	class ITypedAppObjectFactory : public IAppObjectFactory
 	{
 	public:
 		static_assert(std::is_base_of_v<IAppObject, Interface>, "Interface must be derived from IAppObject");

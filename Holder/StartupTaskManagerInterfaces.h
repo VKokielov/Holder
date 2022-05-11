@@ -42,7 +42,7 @@ namespace holder::base::startup
 
 	};
 
-	class ITaskStateAccessor
+	class ITaskStateAccessor 
 	{
 	public:
 		virtual std::shared_ptr<ITaskResult>
@@ -50,7 +50,7 @@ namespace holder::base::startup
 		virtual TaskState GetTaskState(const char* taskName) = 0;
 	};
 
-	class ITaskStateListener
+	class ITaskStateListener : public IAppObject
 	{
 	public:
 		// Called when a task is ready to execute (all dependencies complete).  Set the state to Running and do your thing!
@@ -64,6 +64,5 @@ namespace holder::base::startup
 		virtual void OnRequestFailed(StartupTaskID taskId,
 			RequestType requestType,
 			RequestFailType failType) = 0;
-		virtual ~ITaskStateListener() = 0;
 	};
 }

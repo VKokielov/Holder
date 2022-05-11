@@ -12,6 +12,13 @@
 #include <mutex>
 #include <sstream>
 
+namespace holder::messages
+{
+	// This forward declaration is used later in a type alias to simplify making base services
+	// with the default dispatcher
+	class MQDExecutor;
+}
+
 namespace holder::service
 {
 
@@ -19,11 +26,11 @@ namespace holder::service
 			 typename Base>
 	class BaseService : public Dispatcher,
 		public Base,
-		public std::enable_shared_from_this<BaseService<Dispatcher> > ,
+		public std::enable_shared_from_this<BaseService<Dispatcher, Base> > ,
 		public base::startup::ITaskStateListener
 	{
 	private:
-		using ShEnabler = std::enable_shared_from_this<BaseService<Dispatcher> >;
+		using ShEnabler = std::enable_shared_from_this<BaseService<Dispatcher, Base> >;
 
 		static_assert(std::is_base_of_v<messages::IMessageDispatcher, Dispatcher>,
 			"Dispatcher must implement messages::IMessageDispatcher");
@@ -43,7 +50,7 @@ namespace holder::service
 			{ }
 		};
 
-		static std::string GetReadyTaskName(const chaR* pServicePath)
+		static std::string GetReadyTaskName(const char* pServicePath)
 		{
 			std::stringstream ssmReadyTaskName;
 
@@ -113,19 +120,40 @@ namespace holder::service
 			}
 		}
 
-	public:
-		BaseService(const IServiceConfiguration& myConfig)
-			:Dispatcher(myConfig->GetServiceThreadName(), myConfig->TraceLostMessages()),
-			m_pConfig(myConfig.Clone()),
-			m_servicePath(myConfig->GetServicePath())
+		void StartService()
 		{
-			std::string strReadyTaskName = GetReadyTaskName(m_servicePath.c_str());
-			m_readyTaskID = 
-				base::startup::StartupTaskManager::GetInstance().DefineStartupTask(strReadyTaskName.c_str(),
-				ShEnabler::shared_from_this());
+			// Set the dependencies for the startup manager
+			// NOTE:  Until SetDependencies has been called, there is no chance that a given task
+			// will be marked as complete
+			// Therefore there is no race in any sense
+			std::unique_lock lk{ m_stateMutex };
+			std::vector<std::string> depVector;
+
+			for (const Dependency_& dep : m_dependencies)
+			{
+				depVector.emplace_back(GetReadyTaskName(dep.depPath));
+			}
+
+			// An empty dependency vector is also valid and means that the task
+			// is marked as "ready" at once or asap
+			base::startup::StartupTaskManager::GetInstance().SetStartupDependencies(m_readyTaskID, depVector);
 		}
 
-		// IStartupTaskListener
+		BaseService(const IServiceConfiguration& myConfig)
+			:Dispatcher(myConfig.GetServiceThreadName(), myConfig.TraceLostMessages()),
+			m_pConfig(static_cast<IServiceConfiguration*>(myConfig.Clone())),
+			m_servicePath(myConfig.GetServicePath())
+		{
+			std::string strReadyTaskName = GetReadyTaskName(m_servicePath.c_str());
+			m_readyTaskID =
+				base::startup::StartupTaskManager::GetInstance().DefineStartupTask(strReadyTaskName.c_str(),
+					ShEnabler::shared_from_this());
+		}
+
+	public:
+
+
+		// ITaskStateListener
 		void OnTaskReady(base::startup::StartupTaskID taskId, 
 			base::startup::ITaskStateAccessor& taskStates) override
 		{
@@ -152,7 +180,7 @@ namespace holder::service
 				if (!m_failedStartup)
 				{
 					m_failedStartup = true;
-					base::startup::StartupTaskManager::GetInstance().CompleteTask(m_readyTaskId, false);
+					base::startup::StartupTaskManager::GetInstance().CompleteTask(m_readyTaskID, false);
 				}
 			}
 		}
@@ -162,26 +190,6 @@ namespace holder::service
 			base::startup::RequestFailType failType) override
 		{
 
-		}
-
-		// IService
-		void StartService() override
-		{
-			// Set the dependencies for the startup manager
-			// NOTE:  Until SetDependencies has been called, there is no chance that a given task
-			// will be marked as complete
-			// Therefore there is no race in any sense
-			std::unique_lock lk{ m_stateMutex };
-			std::vector<std::string> depVector;
-
-			for (const Dependency_& dep : m_dependencies)
-			{
-				depVector.emplace_back(GetReadyTaskName(dep.depPath));
-			}
-
-			// An empty dependency vector is also valid and means that the task
-			// is marked as "ready" at once or asap
-			base::startup::StartupTaskManager::GetInstance().SetStartupDependencies(m_readyTaskID, depVector);
 		}
 
 		// Should be defined in Dispatcher.  Called when the executor has started,
@@ -200,7 +208,7 @@ namespace holder::service
 			}
 
 		}
-
+		
 	private:
 		std::shared_ptr<IServiceConfiguration> m_pConfig;
 		std::string m_servicePath;
@@ -210,11 +218,11 @@ namespace holder::service
 		std::mutex m_stateMutex;
 		base::startup::StartupTaskID m_readyTaskID;
 		bool m_failedStartup{ false };
-		bool m_completedStartup(false);
+		bool m_completedStartup{ false };
 
 	};
 
-
-
+	template<typename Base>
+	using MQDBaseService = BaseService<messages::MQDExecutor, Base>;
 
 }

@@ -28,8 +28,6 @@ namespace holder::service
 	{
 	public:
 		using Args = IServiceConfiguration;
-		// This should be called by the starter after all dependencies have been added
-		virtual void StartService(const base::SharedObjectPtr& pMyPtr) = 0;
 	};
 
 	using ServiceFactory = base::ITypedAppObjectFactory<IService>;

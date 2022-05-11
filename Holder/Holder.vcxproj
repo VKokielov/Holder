@@ -159,6 +159,7 @@
     <ClCompile Include="BaseProxy.cpp" />
     <ClCompile Include="BaseServiceLink.cpp" />
     <ClCompile Include="BaseStarter.cpp" />
+    <ClCompile Include="ConsoleTextService.cpp" />
     <ClCompile Include="ExecutionManager.cpp" />
     <ClCompile Include="Holder.cpp" />
     <ClCompile Include="MessageDequeDispatcher.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="BaseServiceLink.h" />
     <ClInclude Include="BaseServiceObject.h" />
     <ClInclude Include="BaseStarter.h" />
+    <ClInclude Include="ConsoleTextService.h" />
     <ClInclude Include="ExecutionManager.h" />
     <ClInclude Include="IAppObject.h" />
     <ClInclude Include="IAppObjectFactory.h" />
@@ -197,6 +199,7 @@
     <ClInclude Include="RaiiLambda.h" />
     <ClInclude Include="RegistrationHelper.h" />
     <ClInclude Include="AppObjectFactoryImpl.h" />
+    <ClInclude Include="ServiceRegistrationHelper.h" />
     <ClInclude Include="SharedObjects.h" />
     <ClInclude Include="SharedObjectStore.h" />
     <ClInclude Include="SharedObjectStoreInterfaces.h" />

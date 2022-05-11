@@ -9,12 +9,6 @@
 namespace holder::base
 {
 
-
-	class IProxy : public IAppObject
-	{
-	
-	};
-
 	class ISharedObject : public IAppObject
 	{
 	public:
