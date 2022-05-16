@@ -159,6 +159,11 @@ namespace holder::service
 			m_pConfig(static_cast<IServiceConfiguration*>(myConfig.Clone())),
 			m_servicePath(myConfig.GetServicePath())
 		{
+
+		}
+
+		void AddService()
+		{
 			std::string strReadyTaskName = GetReadyTaskName(m_servicePath.c_str());
 			m_readyTaskID =
 				base::startup::StartupTaskManager::GetInstance().DefineStartupTask(strReadyTaskName.c_str(),
@@ -166,6 +171,13 @@ namespace holder::service
 		}
 
 	public:
+
+		virtual void OnCreated()
+		{
+			AddService();
+			OnDependenciesAdded();
+		}
+
 		// ITaskStateListener
 		void OnTaskReady(base::startup::StartupTaskID taskId, 
 			base::startup::ITaskStateAccessor& taskStates) override

@@ -25,6 +25,9 @@ namespace holder::messages
 
 		std::shared_ptr<messages::ISenderEndpoint>
 			CreateSenderEndpoint();
+
+		virtual void CreateReceiver();
+
 	protected:
 
 		std::shared_ptr<IMessageDispatcher>
@@ -37,14 +40,19 @@ namespace holder::messages
 
 		BaseMessageHandler(const std::shared_ptr<IMessageDispatcher>& pDispatcher,
 			std::shared_ptr<IMessageFilter> pFilter)
-			:m_pDispatcher(pDispatcher)
+			:m_pDispatcher(pDispatcher),
+			m_pFilter(std::move(pFilter))
 		{
-			m_myReceiverID = pDispatcher->CreateReceiver(shared_from_this(), pFilter, 0);
 		}
+
+		bool HasReceiver() const { return m_hasReceiver; }
 
 	private:
 		std::weak_ptr<IMessageDispatcher> m_pDispatcher;
+		std::weak_ptr<IMessageFilter> m_pFilter;
+
 		ReceiverID m_myReceiverID;
+		bool m_hasReceiver{ false };
 	};
 
 

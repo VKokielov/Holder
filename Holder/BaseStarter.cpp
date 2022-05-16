@@ -36,6 +36,11 @@ bool impl_ns::BaseStarter::Start()
 			return serviceStartDesc.second.pServiceFactory->Create(*serviceStartDesc.second.pServiceConfig);
 		};
 		
+		auto initService = [](const std::shared_ptr<IService>& pService)
+		{
+			pService->OnCreated();
+		};
+
 		auto pService = base::MakeSharedObjectWithFactory<service::IService>(facMakeService);
 
 		// Add to the object store
@@ -44,6 +49,8 @@ bool impl_ns::BaseStarter::Start()
 		serviceDesc.pService = pService;
 
 		m_serviceMap.emplace(serviceStartDesc.second.servicePath, serviceDesc);
+
+		
 	}
 
 	// Start the startup task manager, making sure to end it when all startup tasks are complete

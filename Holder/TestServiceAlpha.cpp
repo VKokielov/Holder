@@ -14,6 +14,13 @@ namespace
 impl_ns::TestServiceAlpha::TestServiceAlpha(const holder::service::IServiceConfiguration& config)
 	:ServiceBase(config)
 {
+
+}
+
+void impl_ns::TestServiceAlpha::OnCreated()
+{
+	ServiceBase::AddService();
+
 	// Add dependency to console service
 	m_didTextService = ServiceBase::AddDependency("/root/services/ConsoleService");
 

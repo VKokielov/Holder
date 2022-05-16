@@ -29,6 +29,7 @@ namespace holder::test
 	public:
 		TestServiceAlpha(const service::IServiceConfiguration& config);
 		bool Init() override;
+		void OnCreated() override;
 
 	private:
 		DependencyID m_didTextService;

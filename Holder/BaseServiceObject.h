@@ -58,9 +58,13 @@ namespace holder::service
 		}
 
 	protected:
-		BaseServiceObject(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
-			:m_pLocalDispatcher(pLocalDispatcher)
+		BaseServiceObject()
 		{ }
+
+		void SetDispatcher(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
+		{
+			m_pLocalDispatcher = pLocalDispatcher;
+		}
 
 		std::shared_ptr<IServiceLink>
 			CreateProxy_(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
@@ -92,6 +96,8 @@ namespace holder::service
 			auto pClientEndpoint = pLocalDispatcher->CreateEndpoint(receiverID);
 			// Create a proxy (which will create its own receiver)
 			pProxy = std::make_shared<Proxy>(pRemoteDispatcher, pClientEndpoint);
+			pProxy->CreateReceiver();
+
 			pServiceLink = pProxy;
 
 			// Create the remote sender endpoint for the proxy

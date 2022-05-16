@@ -67,6 +67,9 @@ namespace holder::stream
 		std::shared_ptr < service::IServiceLink >
 			CreateProxy(const std::shared_ptr<messages::IMessageDispatcher>& pReceiver) override;
 
+	protected:
+		void OnCreated() override;
+
 	private:
 
 		ConsoleTextService(const service::IServiceConfiguration& config);

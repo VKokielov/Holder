@@ -2,6 +2,8 @@
 #include "RegistrationHelperAliases.h"
 #include "BaseServiceConfiguration.h"
 
+#include <iostream>
+
 namespace impl_ns = holder::test;
 
 namespace
@@ -12,6 +14,13 @@ namespace
 
 impl_ns::TestStarter::TestStarter(const holder::service::IStarterArgument& starterArgument)
 {
+	// Print the arguments
+	std::cout << "Arguments:\n";
+	for (size_t i = 0; i < starterArgument.GetArgCount(); ++i)
+	{
+		std::cout << "\t" << starterArgument.GetArgument(i) << '\n';
+	}
+
 	AddService(std::make_shared<service::BaseServiceConfiguration>("/root/services/ConsoleService",
 					"/services/ConsoleTextService", 
 					"threadA", true));

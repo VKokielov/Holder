@@ -186,17 +186,34 @@ namespace holder::base
 
 	template<typename T,
 		typename Fac,
+		typename Initializer,
 		typename ... Args>
 		std::shared_ptr<SharedObjectWrapper>
-		MakeSharedObjectWithFactory(Fac&& fac,
+		MakeInitializedSharedObjectWithFactory(Fac&& fac,
+			Initializer&& init,
 			Args&& ... args)
 	{
 		static_assert(std::is_base_of_v<ISharedObject, T>, "MakeSharedObject can only create subtypes of ISharedObject");
 		
 		std::shared_ptr<T> pObj{ fac(std::forward<Args>(args)...) };
+		init(pObj);
 
 		auto pWrapper = std::make_shared<TypedSharedObjectWrapper<T> >(pObj);
 		return pWrapper;
+	}
+
+	template<typename T,
+		typename Fac,
+		typename ... Args>
+		std::shared_ptr<SharedObjectWrapper>
+		MakeSharedObjectWithFactory(Fac&& fac,
+			Args&& ... args)
+	{
+		static auto blankInit = [](auto& pobj) {};
+
+		return MakeInitializedSharedObjectWithFactory<T>(std::forward<Fac>(fac),
+			blankInit,
+			std::forward<Args>(args)...);
 	}
 
 	template<typename T, typename ... Args>

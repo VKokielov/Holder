@@ -123,8 +123,12 @@ namespace holder::lib
 		{
 			return false;
 		}
+		auto cmpStrings = [](const char* pLeft, const char* pRight)
+		{
+			return pLeft && pRight && !strcmp(pLeft, pRight);
+		};
 
-		return std::mismatch(prefix.begin(), prefix.end(), path.begin()).first 
+		return std::mismatch(prefix.begin(), prefix.end(), path.begin(), cmpStrings).first 
 			== prefix.end();
 	}
 

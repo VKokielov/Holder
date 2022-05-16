@@ -28,6 +28,7 @@ namespace holder::service
 	{
 	public:
 		using Args = IServiceConfiguration;
+		virtual void OnCreated() = 0;
 	};
 
 	using ServiceFactory = base::ITypedAppObjectFactory<IService>;

@@ -30,9 +30,12 @@ std::shared_ptr < holder::service::IServiceLink > impl_ns::ConsoleTextService::C
 }
 
 impl_ns::ConsoleTextService::ConsoleTextService(const holder::service::IServiceConfiguration& config)
-	:ServiceBase(config),
-	SOBase(std::enable_shared_from_this<ServiceBase>::shared_from_this() )
+	:ServiceBase(config)
 {
-	// This service has no dependencies
-	ServiceBase::OnDependenciesAdded();
+
+}
+
+void impl_ns::ConsoleTextService::OnCreated()
+{
+	SOBase::SetDispatcher(std::enable_shared_from_this<ServiceBase>::shared_from_this());
 }
