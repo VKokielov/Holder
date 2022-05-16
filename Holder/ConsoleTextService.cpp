@@ -12,6 +12,11 @@ namespace
 		g_serviceRegistration("/services/ConsoleTextService");
 }
 
+std::shared_ptr<holder::messages::BaseMessageHandler> impl_ns::ConsoleTextProxy::GetMyBaseHandlerSharedPtr() 
+{
+	return shared_from_this();
+}
+
 void impl_ns::ConsoleTextService::ConsoleTextMessage::TypedAct(ConsoleTextClient& client)
 {
 	// No state information, so no need to talk to the client object or to the service
@@ -37,5 +42,20 @@ impl_ns::ConsoleTextService::ConsoleTextService(const holder::service::IServiceC
 
 void impl_ns::ConsoleTextService::OnCreated()
 {
-	SOBase::SetDispatcher(std::enable_shared_from_this<ServiceBase>::shared_from_this());
+	SOBase::SetDispatcher(GetMyMessageDispatcherSharedPtr());
+}
+
+std::shared_ptr<holder::messages::MessageDequeDispatcher> impl_ns::ConsoleTextService::GetMyMessageDispatcherSharedPtr()
+{
+	return shared_from_this();
+}
+std::shared_ptr<holder::messages::IMessageListener> impl_ns::ConsoleTextService::GetMyListenerSharedPtr()
+{
+	return shared_from_this();
+}
+
+std::shared_ptr<holder::base::startup::ITaskStateListener> 
+impl_ns::ConsoleTextService::GetMyTaskStateListenerSharedPtr()
+{
+	return shared_from_this();
 }

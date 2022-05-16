@@ -14,7 +14,9 @@ void impl_ns::BaseMessageHandler::CreateReceiver()
 
 	if (pLocalDispatcher && pLocalFilter)
 	{
-		m_myReceiverID = pLocalDispatcher->CreateReceiver(shared_from_this(), pLocalFilter, 0);
+		m_myReceiverID = pLocalDispatcher->CreateReceiver(GetMyBaseHandlerSharedPtr(), 
+			pLocalFilter, 
+			0);
 		m_hasReceiver = true;
 	}
 }

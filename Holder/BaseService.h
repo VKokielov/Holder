@@ -26,11 +26,9 @@ namespace holder::service
 			 typename Base>
 	class BaseService : public Dispatcher,
 		public Base,
-		public std::enable_shared_from_this<BaseService<Dispatcher, Base> > ,
 		public base::startup::ITaskStateListener
 	{
 	private:
-		using ShEnabler = std::enable_shared_from_this<BaseService<Dispatcher, Base> >;
 
 		static_assert(std::is_base_of_v<messages::IMessageDispatcher, Dispatcher>,
 			"Dispatcher must implement messages::IMessageDispatcher");
@@ -60,6 +58,9 @@ namespace holder::service
 
 	protected:
 		using DependencyID = size_t;
+
+		virtual std::shared_ptr<base::startup::ITaskStateListener>
+			GetMyTaskStateListenerSharedPtr() = 0;
 
 		DependencyID AddDependency(const char* pDependencyPath)
 		{
@@ -167,7 +168,7 @@ namespace holder::service
 			std::string strReadyTaskName = GetReadyTaskName(m_servicePath.c_str());
 			m_readyTaskID =
 				base::startup::StartupTaskManager::GetInstance().DefineStartupTask(strReadyTaskName.c_str(),
-					ShEnabler::shared_from_this());
+					GetMyTaskStateListenerSharedPtr());
 		}
 
 	public:

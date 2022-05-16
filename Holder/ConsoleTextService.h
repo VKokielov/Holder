@@ -14,7 +14,8 @@ namespace holder::stream
 	class ConsoleTextService;
 
 	class ConsoleTextProxy : public service::BaseProxy,
-		public stream::ITextServiceProxy
+		public stream::ITextServiceProxy,
+		public std::enable_shared_from_this<ConsoleTextProxy>
 	{
 	public:
 		ConsoleTextProxy(const std::shared_ptr<messages::IMessageDispatcher>& pDispatcher,
@@ -23,6 +24,9 @@ namespace holder::stream
 		{
 
 		}
+
+		std::shared_ptr<BaseMessageHandler>
+			GetMyBaseHandlerSharedPtr() override;
 
 		void OutputString(const char* pString) override;
 
@@ -44,7 +48,8 @@ namespace holder::stream
 	};
 
 	class ConsoleTextService : public service::MQDBaseService<ITextService>,
-		public service::BaseServiceObject<ConsoleTextService, ConsoleTextProxy, ConsoleTextClient>
+		public service::BaseServiceObject<ConsoleTextService, ConsoleTextProxy, ConsoleTextClient>,
+		public std::enable_shared_from_this<ConsoleTextService>
 	{
 	private:
 		using ServiceBase = service::MQDBaseService<ITextService>;
@@ -69,7 +74,10 @@ namespace holder::stream
 
 	protected:
 		void OnCreated() override;
-
+		// enable_shared_from_this() accessors
+		std::shared_ptr<MessageDequeDispatcher> GetMyMessageDispatcherSharedPtr() override;
+		std::shared_ptr<messages::IMessageListener> GetMyListenerSharedPtr() override;
+		std::shared_ptr<base::startup::ITaskStateListener> GetMyTaskStateListenerSharedPtr() override;
 	private:
 
 		ConsoleTextService(const service::IServiceConfiguration& config);

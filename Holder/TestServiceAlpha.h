@@ -7,7 +7,8 @@
 
 namespace holder::test
 {
-	class TestServiceAlpha : public service::MQDBaseService<service::IService>
+	class TestServiceAlpha : public service::MQDBaseService<service::IService>,
+		public std::enable_shared_from_this<TestServiceAlpha>
 	{
 	private:
 		using ServiceBase = service::MQDBaseService<service::IService>;
@@ -30,6 +31,9 @@ namespace holder::test
 		TestServiceAlpha(const service::IServiceConfiguration& config);
 		bool Init() override;
 		void OnCreated() override;
+
+		std::shared_ptr<MessageDequeDispatcher> GetMyMessageDispatcherSharedPtr() override;
+		std::shared_ptr<base::startup::ITaskStateListener> GetMyTaskStateListenerSharedPtr() override;
 
 	private:
 		DependencyID m_didTextService;

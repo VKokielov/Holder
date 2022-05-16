@@ -15,8 +15,7 @@ namespace holder::service
 {
 
 	template<typename D, typename Proxy, typename Client>
-	class BaseServiceObject : public messages::IMessageListener,
-		public std::enable_shared_from_this<BaseServiceObject<D, Proxy, Client> >
+	class BaseServiceObject : public messages::IMessageListener
 	{
 	private:
 		using ObjType = BaseServiceObject<D, Proxy, Client>;
@@ -61,6 +60,9 @@ namespace holder::service
 		BaseServiceObject()
 		{ }
 
+		virtual std::shared_ptr<IMessageListener>
+			GetMyListenerSharedPtr() = 0;
+
 		void SetDispatcher(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
 		{
 			m_pLocalDispatcher = pLocalDispatcher;
@@ -89,7 +91,7 @@ namespace holder::service
 
 			// First create a receiver for this client object
 			messages::ReceiverID receiverID
-				= pLocalDispatcher->CreateReceiver(std::enable_shared_from_this<ObjType>::shared_from_this(),
+				= pLocalDispatcher->CreateReceiver(GetMyListenerSharedPtr(),
 					std::make_shared<ServiceMessageFilter>(),
 					clientID);
 

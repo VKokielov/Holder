@@ -14,8 +14,7 @@ namespace holder::messages
 	// A deque-based message dispatcher, with customizable signal and block calls
 	// Since blocking/signal behavior may be different in thread vs task-based environments,
 	// this abstraction makes sense
-	class MessageDequeDispatcher : public IMessageDispatcher,
-		private std::enable_shared_from_this<MessageDequeDispatcher>
+	class MessageDequeDispatcher : public IMessageDispatcher
 	{
 	protected:
 
@@ -85,14 +84,11 @@ namespace holder::messages
 
 		void ProcessMessages(WorkStateDescription& workState);
 		virtual void DoSignal() = 0;
+		virtual std::shared_ptr<MessageDequeDispatcher> GetMyMessageDispatcherSharedPtr() = 0;
 
 		virtual void OnLostMessage(const std::shared_ptr<IMessage>& pMessage,
 			ReceiverID rcvId);
 
-		std::shared_ptr<MessageDequeDispatcher> GetMySharedPtr()
-		{
-			return shared_from_this();
-		}
 	private:
 		struct Receiver_
 		{

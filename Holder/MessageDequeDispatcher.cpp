@@ -55,7 +55,7 @@ std::shared_ptr<impl_ns::ISenderEndpoint> impl_ns::MessageDequeDispatcher::Creat
 		pFilter = itReceiver->second.pFilter;
 	}
 
-	pRet = std::make_shared<MQDSenderEndpoint>(pFilter, shared_from_this(), rcvrId);
+	pRet = std::make_shared<MQDSenderEndpoint>(pFilter, GetMyMessageDispatcherSharedPtr(), rcvrId);
 
 	return pRet;
 }

@@ -9,8 +9,7 @@ namespace holder::messages
 
 	// Base message handler class for a single receiver with no dispatch ID
 
-	class BaseMessageHandler : public IMessageListener,
-		public std::enable_shared_from_this<BaseMessageHandler>
+	class BaseMessageHandler : public IMessageListener
 	{
 	public:
 		~BaseMessageHandler()
@@ -29,6 +28,8 @@ namespace holder::messages
 		virtual void CreateReceiver();
 
 	protected:
+		virtual std::shared_ptr<BaseMessageHandler>
+			GetMyBaseHandlerSharedPtr() = 0;
 
 		std::shared_ptr<IMessageDispatcher>
 			LockDispatcher() const

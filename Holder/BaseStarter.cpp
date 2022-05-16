@@ -41,7 +41,7 @@ bool impl_ns::BaseStarter::Start()
 			pService->OnCreated();
 		};
 
-		auto pService = base::MakeSharedObjectWithFactory<service::IService>(facMakeService);
+		auto pService = base::MakeInitializedSharedObjectWithFactory<service::IService>(facMakeService, initService);
 
 		// Add to the object store
 		// This should not fail due to name clashes...

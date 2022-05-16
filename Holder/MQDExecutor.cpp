@@ -11,7 +11,7 @@ void impl_ns::MQDExecutor::InitExecutor()
 {
 	if (m_myExecutor == base::EXEC_WILDCARD)
 	{
-		auto pMyBase = MessageDequeDispatcher::GetMySharedPtr();
+		auto pMyBase = GetMyMessageDispatcherSharedPtr();
 
 		auto pMe = std::static_pointer_cast<MQDExecutor>(pMyBase);
 

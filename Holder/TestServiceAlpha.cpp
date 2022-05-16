@@ -52,7 +52,7 @@ bool impl_ns::TestServiceAlpha::Init()
 
 	auto pProxy = 
 		std::dynamic_pointer_cast<stream::ITextServiceProxy> 
-		 (serviceRef->CreateProxy(ServiceBase::GetMySharedPtr()));
+		 (serviceRef->CreateProxy(GetMyMessageDispatcherSharedPtr()));
 
 	if (!pProxy)
 	{
@@ -69,4 +69,16 @@ bool impl_ns::TestServiceAlpha::Init()
 
 	// Mark as ready
 	return ServiceBase::Init();
+}
+
+
+std::shared_ptr<holder::messages::MessageDequeDispatcher> impl_ns::TestServiceAlpha::GetMyMessageDispatcherSharedPtr()
+{
+	return shared_from_this();
+}
+
+std::shared_ptr<holder::base::startup::ITaskStateListener>
+impl_ns::TestServiceAlpha::GetMyTaskStateListenerSharedPtr()
+{
+	return shared_from_this();
 }
