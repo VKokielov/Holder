@@ -3,6 +3,8 @@
 #include "IAppObject.h"
 
 #include <type_traits>
+// The factories must includ
+#include <memory>
 
 namespace holder::base
 {
@@ -10,7 +12,6 @@ namespace holder::base
 	class IAppObjectFactory
 	{
 	public:
-		virtual IAppObject* Create(const IAppArgument& args) = 0;
 		virtual ~IAppObjectFactory() = default;
 	};
 
@@ -19,7 +20,7 @@ namespace holder::base
 	{
 	public:
 		static_assert(std::is_base_of_v<IAppObject, Interface>, "Interface must be derived from IAppObject");
-		virtual Interface* Create(const IAppArgument& args) = 0;
+		virtual std::shared_ptr<Interface> Create(const IAppArgument& args) = 0;
 	};
 
 

@@ -13,9 +13,9 @@ namespace holder::base
 		static_assert(std::is_base_of_v<Interface, Product>, "Product must be derived from Interface");
 		static_assert(std::is_base_of_v<IAppArgument, TypedArgs>, "TypedArgs must be derived from IAppArgument");
 	public:
-		Interface* Create(const IAppArgument& args) override
+		std::shared_ptr<Interface> Create(const IAppArgument& args) override
 		{
-			return new Product(static_cast<const TypedArgs&>(args));
+			return std::shared_ptr<Product>(new Product(static_cast<const TypedArgs&>(args)));
 		}
 	};
 }

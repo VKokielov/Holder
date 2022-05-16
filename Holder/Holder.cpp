@@ -27,8 +27,17 @@ int main(int argc, const char** argv)
 	if (!base::AppLibrary::GetInstance().FindFactory(pStarterFactoryName,
 		pStarterFactory))
 	{
-		std::cerr << "ERROR (Holder): starter factory " << pStarterFactoryName << " not found; exiting.\n";
+		std::cerr << "ERROR (Holder): factory " << pStarterFactoryName << " not found; exiting.\n";
 		return -1;
+	}
+
+	std::shared_ptr<base::ITypedAppObjectFactory<service::IServiceStarter> >
+		pStarterFactoryTyped =
+		std::dynamic_pointer_cast<base::ITypedAppObjectFactory<service::IServiceStarter>> (pStarterFactory);
+
+	if (!pStarterFactory)
+	{
+		std::cerr << "ERROR (Holder): factory " << pStarterFactoryName << " is not a starter factory.\n";
 	}
 
 	class StarterArgs : public 
@@ -61,15 +70,7 @@ int main(int argc, const char** argv)
 	StarterArgs starterArgs(argc, argv);
 
 	// Create the starter
-	std::shared_ptr<base::IAppObject> pStarterRaw(pStarterFactory->Create(starterArgs));
-
-	std::shared_ptr<service::IServiceStarter> pStarter (std::dynamic_pointer_cast<service::IServiceStarter>(pStarterRaw));
-	
-	if (!pStarter)
-	{
-		std::cerr << "ERROR (Holder): Starter factory " << pStarterFactoryName << " did not produce a valid starter.\n";
-		return -1;
-	}
+	std::shared_ptr<service::IServiceStarter> pStarter(pStarterFactoryTyped->Create(starterArgs));
 
 	if (!pStarter->Start())
 	{
