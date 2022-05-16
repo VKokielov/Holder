@@ -94,10 +94,10 @@ namespace holder::base
 
 		public:
 			ExecutorThread(ThreadID id,
-				const std::string& threadName,
-				ExecutorID firstExecId,
-				std::shared_ptr<IExecutor> pFirstExecutor);
+				const std::string& threadName);
 
+			void StartMe(ExecutorID firstExecId,
+				std::shared_ptr<IExecutor> pFirstExecutor);
 			void JoinMe();
 
 			const char* GetThreadName() const
@@ -141,7 +141,7 @@ namespace holder::base
 
 			// Once this goes to zero, the thread goes to sleep waiting for someone to 
 			// be signalled
-			unsigned int m_nActive;
+			unsigned int m_nActive{ 0 };
 
 			// Map for signalling.  Local only
 			std::unordered_map<ExecutorID, size_t>  m_signalMap;
@@ -196,6 +196,7 @@ namespace holder::base
 		public:
 			TimerThread();
 
+			void StartMe();
 			void DoomMe();
 			void JoinMe();
 

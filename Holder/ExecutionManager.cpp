@@ -238,22 +238,37 @@ void impl_ns::ExecutionManager::ExecutorThread::DoomMe()
 }
 
 impl_ns::ExecutionManager::ExecutorThread::ExecutorThread(ThreadID id,
-	const std::string& threadName,
-	ExecutorID execId,
-	std::shared_ptr<IExecutor> pFirstExecutor)
+	const std::string& threadName)
 	:m_threadId(id),
-	m_threadName(threadName),
-	m_thread(&ExecutionManager::ExecutorThread::operator(), this, execId, pFirstExecutor)
+	m_threadName(threadName)
 {
-	
+
 }
+
+
+void impl_ns::ExecutionManager::ExecutorThread::StartMe(ExecutorID execId,
+	std::shared_ptr<IExecutor> pFirstExecutor)
+{
+	m_thread = std::thread(&ExecutionManager::ExecutorThread::operator(), this, execId, pFirstExecutor);
+}
+
+
+void impl_ns::ExecutionManager::ExecutorThread::JoinMe()
+{
+	m_thread.join();
+}
+
+
 
 // TimerThread
 impl_ns::ExecutionManager::TimerThread::TimerThread()
-	:m_thread(&ExecutionManager::TimerThread::operator(), this)
 {
 }
 
+void impl_ns::ExecutionManager::TimerThread::StartMe()
+{
+	m_thread = std::thread(&ExecutionManager::TimerThread::operator(), this);
+}
 void impl_ns::ExecutionManager::TimerThread::DoomMe()
 {
 	m_threadDoomed.store(true);
@@ -445,6 +460,8 @@ impl_ns::ExecutionManager::ExecutionManager()
 	:m_idleTimeout(SingletonConfig::GetInstance().GetDurationUS("execution_microsecond_wait"))
 {
 	m_pTimerThread.reset(new TimerThread());
+	// OK, as long as TimerThread doesn't reference execution manager!
+	m_pTimerThread->StartMe();
 }
 
 void impl_ns::ExecutionManager::LockShop(bool sendTermination)
@@ -501,10 +518,6 @@ impl_ns::ExecutionManager::~ExecutionManager()
 
 }
 
-void impl_ns::ExecutionManager::ExecutorThread::JoinMe()
-{
-	m_thread.join();
-}
 
 impl_ns::ExecutorID impl_ns::ExecutionManager::AddExecutor(const char* pThreadName,
 	const std::shared_ptr<IExecutor>& pExecutor)
@@ -522,7 +535,7 @@ impl_ns::ExecutorID impl_ns::ExecutionManager::AddExecutor(const char* pThreadNa
 		return EXEC_WILDCARD;
 	}
 
-	std::string sThreadName;
+	std::string sThreadName(pThreadName);
 
 	// Assign a new ID to the executor
 	ExecutorID execId = m_nextExec++;
@@ -541,11 +554,15 @@ impl_ns::ExecutorID impl_ns::ExecutionManager::AddExecutor(const char* pThreadNa
 	{
 		// Create a new thread
 		auto pThread = std::make_shared<ExecutorThread>(m_nextThread,
-			sThreadName,
-			execId,
+			sThreadName);
+		pThread->StartMe(execId,
 			pExecutor);
+
 		threadId = m_nextThread;
 		++m_nextThread;
+
+		m_threadMap.emplace(threadId, std::move(pThread));
+		m_threadNameMap.emplace(pThreadName, threadId);
 	}
 
 	// Add to the executor map

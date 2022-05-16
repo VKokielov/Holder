@@ -43,6 +43,7 @@ impl_ns::ConsoleTextService::ConsoleTextService(const holder::service::IServiceC
 void impl_ns::ConsoleTextService::OnCreated()
 {
 	SOBase::SetDispatcher(GetMyMessageDispatcherSharedPtr());
+	ServiceBase::OnCreated();
 }
 
 std::shared_ptr<holder::messages::MessageDequeDispatcher> impl_ns::ConsoleTextService::GetMyMessageDispatcherSharedPtr()

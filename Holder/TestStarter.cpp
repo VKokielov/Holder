@@ -25,8 +25,8 @@ impl_ns::TestStarter::TestStarter(const holder::service::IStarterArgument& start
 					"/services/ConsoleTextService", 
 					"threadA", true));
 
-	AddService(std::make_shared<service::BaseServiceConfiguration>("/root/services/TestAlphaService",
-		"/services/TestAlphaService",
+	AddService(std::make_shared<service::BaseServiceConfiguration>("/root/services/TestServiceAlpha",
+		"/services/TestServiceAlpha",
 		"threadA", true));
 }
 
