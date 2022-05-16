@@ -57,14 +57,22 @@ namespace holder::base
 			std::shared_lock lk(m_storeMutex);
 
 			lib::PathFromString pfs(path);
-			lib::NodeFinder nodeFinder;
+			lib::NodeFinder<StoredObjectID> nodeFinder;
 			
 			if (lib::TracePath(m_objTree, pfs, nodeFinder) != lib::NodeResult::OK)
 			{
 				return false;
 			}
 
-			return GetObject(nodeFinder.GetNodeID(), std::forward<F>(callback));
+			StoredObjectID objID{ 0 };
+			if (m_objTree.GetValue(nodeFinder.GetNodeID(), objID) 
+				!= lib::NodeResult::OK)
+			{
+				// Not a leaf
+				return false;
+			}
+
+			return GetObject(objID, std::forward<F>(callback));
 		}
 
 		static SharedObjectStore& GetInstance();

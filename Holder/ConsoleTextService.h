@@ -13,7 +13,8 @@ namespace holder::stream
 
 	class ConsoleTextService;
 
-	class ConsoleTextProxy : public service::BaseProxy
+	class ConsoleTextProxy : public service::BaseProxy,
+		public stream::ITextServiceProxy
 	{
 	public:
 		ConsoleTextProxy(const std::shared_ptr<messages::IMessageDispatcher>& pDispatcher,
@@ -22,6 +23,9 @@ namespace holder::stream
 		{
 
 		}
+
+		void OutputString(const char* pString) override;
+
 	};
 
 	class ConsoleTextClient : public service::BaseClientObject
@@ -45,6 +49,20 @@ namespace holder::stream
 	private:
 		using ServiceBase = service::MQDBaseService<ITextService>;
 		using SOBase = service::BaseServiceObject<ConsoleTextService, ConsoleTextProxy, ConsoleTextClient>;
+
+		class ConsoleTextMessage : public service::TypedServiceMessage<ConsoleTextMessage, ConsoleTextClient>
+		{
+		public:
+			ConsoleTextMessage(const char* pText)
+				:m_text(pText)
+			{ }
+
+			void TypedAct(ConsoleTextClient& client);
+
+		private:
+			std::string m_text;
+		};
+
 	public:
 		std::shared_ptr < service::IServiceLink >
 			CreateProxy(const std::shared_ptr<messages::IMessageDispatcher>& pReceiver) override;
@@ -54,6 +72,8 @@ namespace holder::stream
 		ConsoleTextService(const service::IServiceConfiguration& config);
 
 		friend class base::DefaultAppObjectFactory<ConsoleTextService, service::IService>;
+		friend class ConsoleTextProxy;
+		friend class ConsoleTextClient;
 	};
 
 

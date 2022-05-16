@@ -66,6 +66,12 @@
     <ClCompile Include="ConsoleTextService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BaseServiceConfiguration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestServiceAlpha.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAppObject.h">
@@ -182,7 +188,19 @@
     <ClInclude Include="ConsoleTextService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ServiceRegistrationHelper.h">
+    <ClInclude Include="BaseServiceConfiguration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CloneHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RegistrationHelperAliases.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestStarter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestServiceAlpha.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

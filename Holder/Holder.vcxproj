@@ -157,6 +157,7 @@
     <ClCompile Include="BaseClientObject.cpp" />
     <ClCompile Include="BaseMessageHandler.cpp" />
     <ClCompile Include="BaseProxy.cpp" />
+    <ClCompile Include="BaseServiceConfiguration.cpp" />
     <ClCompile Include="BaseServiceLink.cpp" />
     <ClCompile Include="BaseStarter.cpp" />
     <ClCompile Include="ConsoleTextService.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="SharedObjectStore.cpp" />
     <ClCompile Include="SingletonConfig.cpp" />
     <ClCompile Include="StartupTaskManager.cpp" />
+    <ClCompile Include="TestServiceAlpha.cpp" />
     <ClCompile Include="TypeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,9 +180,11 @@
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
     <ClInclude Include="BaseService.h" />
+    <ClInclude Include="BaseServiceConfiguration.h" />
     <ClInclude Include="BaseServiceLink.h" />
     <ClInclude Include="BaseServiceObject.h" />
     <ClInclude Include="BaseStarter.h" />
+    <ClInclude Include="CloneHelper.h" />
     <ClInclude Include="ConsoleTextService.h" />
     <ClInclude Include="ExecutionManager.h" />
     <ClInclude Include="IAppObject.h" />
@@ -199,7 +203,7 @@
     <ClInclude Include="RaiiLambda.h" />
     <ClInclude Include="RegistrationHelper.h" />
     <ClInclude Include="AppObjectFactoryImpl.h" />
-    <ClInclude Include="ServiceRegistrationHelper.h" />
+    <ClInclude Include="RegistrationHelperAliases.h" />
     <ClInclude Include="SharedObjects.h" />
     <ClInclude Include="SharedObjectStore.h" />
     <ClInclude Include="SharedObjectStoreInterfaces.h" />
@@ -209,6 +213,8 @@
     <ClInclude Include="StartupTaskManagerInterfaces.h" />
     <ClInclude Include="StartupTaskManager.h" />
     <ClInclude Include="PathFromString.h" />
+    <ClInclude Include="TestServiceAlpha.h" />
+    <ClInclude Include="TestStarter.h" />
     <ClInclude Include="TypeID.h" />
     <ClInclude Include="TypeInfoObjs.h" />
   </ItemGroup>

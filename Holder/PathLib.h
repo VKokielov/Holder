@@ -179,7 +179,7 @@ namespace holder::lib
 	class NodeFinder
 	{
 	public:
-		TraceAction operator () (ObjectTree<Value, Metadata>& tree,
+		TraceAction operator () (const ObjectTree<Value, Metadata>& tree,
 			size_t pathIdx,
 			size_t pathSize,
 			NodeID nodeId,

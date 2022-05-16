@@ -68,12 +68,13 @@ namespace holder::service
 			std::unique_lock lk{ m_mutex };
 
 			auto pLocalDispatcher = m_pLocalDispatcher.lock();
+			std::shared_ptr<IServiceLink> pServiceLink;
 			std::shared_ptr<Proxy> pProxy;
 
 			if (!pLocalDispatcher)
 			{
 				// Where is the dispatcher?  Can't create proxy
-				return pProxy;
+				return pServiceLink;
 			}
 
 			// We now create a new client object and a proxy to go with it.
@@ -91,6 +92,7 @@ namespace holder::service
 			auto pClientEndpoint = pLocalDispatcher->CreateEndpoint(receiverID);
 			// Create a proxy (which will create its own receiver)
 			pProxy = std::make_shared<Proxy>(pRemoteDispatcher, pClientEndpoint);
+			pServiceLink = pProxy;
 
 			// Create the remote sender endpoint for the proxy
 			auto pProxyEndpoint = pProxy->CreateSenderEndpoint();
@@ -103,7 +105,7 @@ namespace holder::service
 					receiverID,
 					pProxyEndpoint));
 
-			return pProxy;
+			return pServiceLink;
 		}
 	private:
 

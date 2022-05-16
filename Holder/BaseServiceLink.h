@@ -22,39 +22,20 @@ namespace holder::service
 	};
 
 
-	/*
-	class BaseServiceLink : public messages::BaseMessageHandler,
-		public IServiceLink
+	template<typename Derived,
+		     typename Client>
+	class TypedServiceMessage : public IServiceMessage
 	{
 	public:
-		void OnMessage(const std::shared_ptr<messages::IMessage>& pMsg,
-			messages::DispatchID dispatchId) override
+		bool IsDestroyMessage() override { return false; }
+		void Act(IServiceLink& object) override
 		{
-			static_cast<IServiceMessage&>(*pMsg).Act(*this);
+			static_cast<Derived*>(this)->TypedAct(static_cast<Client&>(object));
 		}
-
-	protected:
-		BaseServiceLink(const std::shared_ptr<messages::IMessageDispatcher>& pReceiveDispatcher)
-			:BaseMessageHandler(std::move(pReceiveDispatcher), std::make_shared<ServiceMessageFilter>())
-		{
-
-		}
-
-		void SetCounterpart(std::shared_ptr<messages::ISenderEndpoint> pCounterpart)
-		{
-			m_pCounterpart = std::move(pCounterpart);
-		}
-
-
-
-	private:
-		std::shared_ptr<messages::ISenderEndpoint> m_pCounterpart;
 	};
 
-	*/
-
 	template<typename Msg, typename ... Args>
-	void SendMessage(std::shared_ptr<messages::ISenderEndpoint>& pCounterpart,
+	void SendMessage(const std::shared_ptr<messages::ISenderEndpoint>& pCounterpart,
 		Args&& ... args)
 	{
 		static_assert(std::is_base_of_v<IServiceMessage, Msg>, "Can only send classes deriving from IServiceMessage");

@@ -2,16 +2,16 @@
 
 namespace impl_ns = holder::base::startup;
 
-void impl_ns::StartupTaskManager::StartupTaskExecutor::Init()
-{ }
+bool impl_ns::StartupTaskManager::StartupTaskExecutor::Init()
+{ 
+	return true;
+}
 
 void impl_ns::StartupTaskManager::StartupTaskExecutor::DeInit()
 { }
 
 holder::base::ExecutionState impl_ns::StartupTaskManager::StartupTaskExecutor::Run(holder::base::ExecutionArgs& args)
 {
-
-
 	StartupTaskManager& mgrInstance = StartupTaskManager::GetInstance();
 	std::unique_lock lk{mgrInstance.m_mutex };
 

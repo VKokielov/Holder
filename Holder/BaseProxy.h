@@ -21,6 +21,12 @@ namespace holder::service
 		messages::ReceiverID GetReceiverID() const;
 
 		~BaseProxy();
+	protected:
+		const std::shared_ptr<messages::ISenderEndpoint>&
+			CntPart()
+		{
+			return m_pCounterpart;
+		}
 	private:
 		std::shared_ptr<messages::ISenderEndpoint> m_pCounterpart;
 	};

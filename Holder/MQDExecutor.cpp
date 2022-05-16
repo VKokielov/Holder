@@ -49,9 +49,9 @@ void impl_ns::MQDExecutor::DoSignal()
 	base::ExecutionManager::GetInstance().SignalExecutor(m_myExecutor, base::ExecutorSignalType::WakeUp);
 }
 
-void impl_ns::MQDExecutor::Init()
+bool impl_ns::MQDExecutor::Init()
 {
-
+	return true;
 }
 void impl_ns::MQDExecutor::DeInit()
 {

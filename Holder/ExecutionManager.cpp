@@ -13,7 +13,7 @@ void impl_ns::ExecutionManager::ExecutorThread::operator()(
 	AddExecutor(firstExecId, pFirstExecutor);
 
 	// Begin the loop
-	bool shouldRun{ true };
+	bool shouldRun{ !m_executors.empty() };
 	bool justWaited{ false };
 
 	std::vector<ExecutionInstructionMessage> localInstructionList;
@@ -112,12 +112,16 @@ void impl_ns::ExecutionManager::ExecutorThread::operator()(
 void impl_ns::ExecutionManager::ExecutorThread::AddExecutor(ExecutorID execId,
 	std::shared_ptr<IExecutor> pExecutor)
 {
+	if (!pExecutor->Init())
+	{
+		return;
+	}
+
 	size_t localId = m_executors.size();
 	m_executors.emplace_back(execId, ExecutorStateTag::Executing, pExecutor);
 	m_signalMap.emplace(execId, localId);
 	++m_nActive;
 
-	pExecutor->Init();
 }
 
 void impl_ns::ExecutionManager::ExecutorThread::HandleSignalForIndex(size_t execIndex, ExecutorSignalType signalType)

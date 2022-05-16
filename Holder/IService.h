@@ -10,7 +10,7 @@ namespace holder::service
 	// This class should hold the instance-specific configuration 
 	class IServiceInstanceConfiguration : public base::IAppArgument
 	{
-	
+
 	};
 
 

@@ -55,7 +55,7 @@ namespace holder::base::startup
 			StartupTaskExecutor(bool stopWhenComplete)
 				:m_stopWhenComplete(stopWhenComplete)
 			{ }
-			void Init() override;
+			bool Init() override;
 			void DeInit() override;
 			ExecutionState Run(ExecutionArgs& args) override;
 			void TerminationRequested() override;

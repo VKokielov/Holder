@@ -17,12 +17,14 @@ namespace holder::messages
 	public:
 		base::ExecutionState Run(base::ExecutionArgs& args) override;
 		void TerminationRequested() override;
-		void Init() override;
+		bool Init() override;
 		void DeInit() override;
 	protected:
 		MQDExecutor(const char* pThreadName, bool traceLostMessages);
 		void InitExecutor();
 		void DoSignal() override;
+
+
 	private:
 		std::string m_threadName;
 		base::ExecutorID m_myExecutor{ base::EXEC_WILDCARD };

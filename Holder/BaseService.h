@@ -99,9 +99,10 @@ namespace holder::service
 				const base::SharedObjectPtr& pObjPtr)
 			{
 				depPtr = pObjPtr;
+				return true;
 			};
 					
-			base::SharedObjectStore::FindObject(depPath.c_str(), getObject);
+			base::SharedObjectStore::GetInstance().FindObject(depPath.c_str(), getObject);
 			
 			return depPtr;
 		}
@@ -110,7 +111,7 @@ namespace holder::service
 		{
 			std::unique_lock lk{ m_stateMutex };
 			
-			if (!m_completedStartup)
+			if (!m_completedStartup && !m_failedStartup)
 			{
 				// Mark the task as complete and add the result as here given
 				base::startup::StartupTaskManager::GetInstance()
@@ -120,7 +121,21 @@ namespace holder::service
 			}
 		}
 
-		void StartService()
+		void MarkFailed()
+		{
+			std::unique_lock lk{ m_stateMutex };
+
+			if (!m_failedStartup && !m_completedStartup)
+			{
+				// Mark the task as complete and add the result as here given
+				base::startup::StartupTaskManager::GetInstance()
+					.CompleteTask(m_readyTaskID, false);
+
+				m_failedStartup = true;
+			}
+		}
+
+		void OnDependenciesAdded()
 		{
 			// Set the dependencies for the startup manager
 			// NOTE:  Until SetDependencies has been called, there is no chance that a given task
@@ -131,7 +146,7 @@ namespace holder::service
 
 			for (const Dependency_& dep : m_dependencies)
 			{
-				depVector.emplace_back(GetReadyTaskName(dep.depPath));
+				depVector.emplace_back(GetReadyTaskName(dep.depPath.c_str()));
 			}
 
 			// An empty dependency vector is also valid and means that the task
@@ -151,8 +166,6 @@ namespace holder::service
 		}
 
 	public:
-
-
 		// ITaskStateListener
 		void OnTaskReady(base::startup::StartupTaskID taskId, 
 			base::startup::ITaskStateAccessor& taskStates) override
@@ -194,9 +207,12 @@ namespace holder::service
 
 		// Should be defined in Dispatcher.  Called when the executor has started,
 		// and marks the "ready" task as complete
-		void Init() override
+		bool Init() override
 		{
-			Dispatcher::Init();
+			if (!Dispatcher::Init())
+			{
+				return false;
+			}
 
 			std::unique_lock lk{ m_stateMutex };
 			
@@ -207,6 +223,7 @@ namespace holder::service
 				MarkReady(std::shared_ptr<base::startup::ITaskResult>());
 			}
 
+			return true;
 		}
 		
 	private:

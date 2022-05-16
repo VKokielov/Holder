@@ -242,7 +242,7 @@ namespace holder::lib
 				&& static_cast<const DictionaryNode*>(pNode)->IsEmpty();
 		}
 
-		bool GetValue(NodeID nodeId, Val& outValue) const
+		NodeResult GetValue(NodeID nodeId, Val& outValue) const
 		{
 			NodeType nodeType;
 			const ValueNode* pNode =

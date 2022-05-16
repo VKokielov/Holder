@@ -6,12 +6,13 @@
 namespace holder::stream
 {
 
-	class ITextService : public service::IService, service::IServiceObject
+	class ITextService : public service::IService, 
+		public service::IServiceObject
 	{
 
 	};
 
-	class ITextServiceProxy : public service::IServiceLink
+	class ITextServiceProxy : public base::IAppObject
 	{
 	public:
 		virtual void OutputString(const char* pString) = 0;
