@@ -171,6 +171,7 @@
     <ClCompile Include="SingletonConfig.cpp" />
     <ClCompile Include="StartupTaskManager.cpp" />
     <ClCompile Include="TestServiceAlpha.cpp" />
+    <ClCompile Include="TestStarter.cpp" />
     <ClCompile Include="TypeManager.cpp" />
   </ItemGroup>
   <ItemGroup>

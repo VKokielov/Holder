@@ -6,8 +6,11 @@
 
 namespace impl_ns = holder::stream;
 
-holder::ServiceRegistrationHelper<impl_ns::ConsoleTextService>
-	g_serviceRegistration("/services/ConsoleTextService");
+namespace
+{
+	holder::ServiceRegistrationHelper<impl_ns::ConsoleTextService>
+		g_serviceRegistration("/services/ConsoleTextService");
+}
 
 void impl_ns::ConsoleTextService::ConsoleTextMessage::TypedAct(ConsoleTextClient& client)
 {

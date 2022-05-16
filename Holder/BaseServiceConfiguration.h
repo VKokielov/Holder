@@ -25,7 +25,8 @@ namespace holder::service
 			const char* pServiceTypeName,
 			const char* pServiceThreadName,
 			bool traceLostMessages,
-			std::shared_ptr<IServiceInstanceConfiguration> pInstanceConfig)
+			std::shared_ptr<IServiceInstanceConfiguration> pInstanceConfig
+				= std::shared_ptr<IServiceInstanceConfiguration>())
 			:m_servicePath(pServicePath),
 			m_serviceTypeName(pServiceTypeName),
 			m_serviceThreadName(pServiceThreadName),

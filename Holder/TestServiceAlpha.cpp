@@ -1,14 +1,33 @@
 #include "TestServiceAlpha.h"
+#include "RegistrationHelperAliases.h"
+
+#include <sstream>
 
 namespace impl_ns = holder::test;
+
+namespace
+{
+	holder::ServiceRegistrationHelper<impl_ns::TestServiceAlpha>
+		g_serviceRegistration("/services/TestServiceAlpha");
+}
 
 impl_ns::TestServiceAlpha::TestServiceAlpha(const holder::service::IServiceConfiguration& config)
 	:ServiceBase(config)
 {
 	// Add dependency to console service
-	m_didTextService = ServiceBase::AddDependency("/root/ConsoleTextService");
+	m_didTextService = ServiceBase::AddDependency("/root/services/ConsoleService");
 
 	ServiceBase::OnDependenciesAdded();
+}
+
+void impl_ns::TestServiceAlpha::TextSender::OnTimer(holder::base::TimerID timerId)
+{
+	std::stringstream ssm;
+	ssm << "Counter value: " << m_counter << '\n';
+	++m_counter;
+
+	std::string sText(ssm.str());
+	m_pTextProxy->OutputString(sText.c_str());
 }
 
 bool impl_ns::TestServiceAlpha::Init()

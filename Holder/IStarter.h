@@ -14,6 +14,7 @@ namespace holder::service
 	class IServiceStarter : public base::IAppObject
 	{
 	public:
+		using Args = IStarterArgument;
 		virtual bool Start() = 0;
 		virtual bool Run() = 0;
 	};
