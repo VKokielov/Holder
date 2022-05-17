@@ -9,6 +9,9 @@ void impl_ns::ExecutionManager::ExecutorThread::operator()(
 	ExecutorID firstExecId,
 	std::shared_ptr<IExecutor> pFirstExecutor)
 {
+	// Set the thread local variable giving the thread name
+	ExecutionManager::m_tlThreadName = m_threadName;
+
 	// Add the initial executor
 	AddExecutor(firstExecId, pFirstExecutor);
 
@@ -238,9 +241,11 @@ void impl_ns::ExecutionManager::ExecutorThread::DoomMe()
 }
 
 impl_ns::ExecutionManager::ExecutorThread::ExecutorThread(ThreadID id,
-	const std::string& threadName)
+	const std::string& threadName,
+	bool isSingleton)
 	:m_threadId(id),
-	m_threadName(threadName)
+	m_threadName(threadName),
+	m_isSingleton(isSingleton)
 {
 
 }
@@ -456,6 +461,8 @@ impl_ns::ExecutionManager::TimerThread::TimerAction
 	return retValue;
 }
 
+thread_local std::string impl_ns::ExecutionManager::m_tlThreadName{ "" };
+
 impl_ns::ExecutionManager::ExecutionManager()
 	:m_idleTimeout(SingletonConfig::GetInstance().GetDurationUS("execution_microsecond_wait"))
 {
@@ -520,11 +527,12 @@ impl_ns::ExecutionManager::~ExecutionManager()
 
 
 impl_ns::ExecutorID impl_ns::ExecutionManager::AddExecutor(const char* pThreadName,
-	const std::shared_ptr<IExecutor>& pExecutor)
+	const std::shared_ptr<IExecutor>& pExecutor,
+	bool isSingleton)
 {
 	std::unique_lock lk{ m_mutex };
 
-	if (m_nextExec == EXEC_WILDCARD - 1)
+	if (!pThreadName || (*pThreadName == '\0') || m_nextExec == EXEC_WILDCARD - 1)
 	{
 		throw ExecutorStateException();
 	}
@@ -548,13 +556,18 @@ impl_ns::ExecutorID impl_ns::ExecutionManager::AddExecutor(const char* pThreadNa
 		threadId = itThreadID->second;
 		// Existing thread.  Send an add message
 		auto itThread = m_threadMap.find(threadId);
+
+		if (isSingleton || itThread->second->IsSingleton())
+		{
+			throw ExecutorStateException();
+		}
 		itThread->second->PostAddExecutor(execId, pExecutor);
 	}
 	else
 	{
 		// Create a new thread
 		auto pThread = std::make_shared<ExecutorThread>(m_nextThread,
-			sThreadName);
+			sThreadName, isSingleton);
 		pThread->StartMe(execId,
 			pExecutor);
 

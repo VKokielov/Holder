@@ -26,6 +26,16 @@ namespace holder::base::startup
 		class RunTaskAction;
 		class CompleteTaskAction;
 
+
+		// These are sent to the executor and act there
+		class IStartupAction
+		{
+		public:
+			virtual void Act(StartupTaskExecutor* pExecutor) const = 0;
+			virtual ~IStartupAction() = default;
+		};
+
+
 		class StartupTaskExecutor : public IExecutor, public ITaskStateAccessor
 		{
 		private:
@@ -75,18 +85,12 @@ namespace holder::base::startup
 			std::unordered_map<std::string, TaskNameDesc_>  m_taskNameMap;
 			std::unordered_map<StartupTaskID, TaskStateDesc_> m_taskStates;
 
+			std::deque<std::shared_ptr<IStartupAction> >
+				m_localQueue;
 			bool m_stopWhenComplete{ false };
 			bool m_stopRequested{ false };
 
 			unsigned int m_waitingTasks{ 0 };
-		};
-
-		// These are sent to the executor and act there
-		class IStartupAction
-		{
-		public:
-			virtual void Act(StartupTaskExecutor* pExecutor) const = 0;
-			virtual ~IStartupAction() = default;
 		};
 
 		template<typename D>
@@ -187,6 +191,8 @@ namespace holder::base::startup
 
 		std::mutex m_mutex;
 
+		std::shared_ptr<StartupTaskExecutor> m_pMyExecutor;
+		ExecutorID m_execID;
 		bool m_running{ false };
 		StartupTaskID m_nextTaskId{ 0 };
 		std::deque<std::shared_ptr<IStartupAction> > m_executorQueue;

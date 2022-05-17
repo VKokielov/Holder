@@ -180,7 +180,7 @@ namespace holder::service
 		}
 
 		// ITaskStateListener
-		void OnTaskReady(base::startup::StartupTaskID taskId, 
+		void OnTaskReady(base::startup::StartupTaskID taskId,
 			base::startup::ITaskStateAccessor& taskStates) override
 		{
 			// All dependencies are ready.  Start the executor.  
@@ -188,6 +188,8 @@ namespace holder::service
 			std::unique_lock lk{ m_stateMutex };
 			if (m_readyTaskID == taskId)
 			{
+				// Set task to running
+				base::startup::StartupTaskManager::GetInstance().RunTask(m_readyTaskID);
 				Dispatcher::InitExecutor();
 			}
 		}

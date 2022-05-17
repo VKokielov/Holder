@@ -94,7 +94,8 @@ namespace holder::base
 
 		public:
 			ExecutorThread(ThreadID id,
-				const std::string& threadName);
+				const std::string& threadName,
+				bool isSingleton);
 
 			void StartMe(ExecutorID firstExecId,
 				std::shared_ptr<IExecutor> pFirstExecutor);
@@ -105,6 +106,8 @@ namespace holder::base
 				return m_threadName.c_str();
 			}
 
+			bool IsSingleton() const { return m_isSingleton; }
+
 			void PostAddExecutor(ExecutorID execId,
 				std::shared_ptr<IExecutor> pExecutor);
 			void PostSignalExecutor(ExecutorID execId,
@@ -113,6 +116,8 @@ namespace holder::base
 			// Post a signal to all executors on this thread
 			void PostSignalAll(ExecutorSignalType signalType);
 			void DoomMe();
+
+
 		private:
 
 			void operator()(ExecutorID firstExecId, 
@@ -130,6 +135,8 @@ namespace holder::base
 			// Thread
 			ThreadID m_threadId;
 			std::string m_threadName;
+			bool m_isSingleton;
+
 			std::thread m_thread;
 
 			// Messaging
@@ -234,11 +241,17 @@ namespace holder::base
 			std::atomic<bool>  m_threadDoomed;
 		};
 
+
 	public:
 		static ExecutionManager& GetInstance();
+		static const std::string& GetCurrentThreadName()
+		{
+			return m_tlThreadName;
+		}
 
 		ExecutorID AddExecutor(const char* pThreadName,
-			const std::shared_ptr<IExecutor>& pExecutor);
+			const std::shared_ptr<IExecutor>& pExecutor,
+			bool isSingleton = false);
 
 		// "Lock up shop", disallowing new executors and optionally sending a signal for existing
 		// executors to stop executing
@@ -293,6 +306,8 @@ namespace holder::base
 		std::chrono::microseconds m_idleTimeout;
 
 		std::vector<std::shared_ptr<ExecutorThread> >  m_threadsToJoin;
+
+		static thread_local std::string m_tlThreadName;
 	};
 
 }

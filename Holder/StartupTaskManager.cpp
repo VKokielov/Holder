@@ -10,22 +10,32 @@ bool impl_ns::StartupTaskManager::StartupTaskExecutor::Init()
 void impl_ns::StartupTaskManager::StartupTaskExecutor::DeInit()
 { }
 
+namespace
+{
+	const char* startupThread_ = "/infra/StartupBackgroundThread";
+}
+
 holder::base::ExecutionState impl_ns::StartupTaskManager::StartupTaskExecutor::Run(holder::base::ExecutionArgs& args)
 {
-	StartupTaskManager& mgrInstance = StartupTaskManager::GetInstance();
-	std::unique_lock lk{mgrInstance.m_mutex };
-
-	if (m_stopRequested)
 	{
-		mgrInstance.m_running = false;
-		return ExecutionState::End;
+		StartupTaskManager& mgrInstance = StartupTaskManager::GetInstance();
+		std::unique_lock lk{ mgrInstance.m_mutex };
+
+		if (m_stopRequested)
+		{
+			mgrInstance.m_running = false;
+			return ExecutionState::End;
+		}
+
+		std::swap(m_localQueue, mgrInstance.m_executorQueue);
 	}
 
-	while (!mgrInstance.m_executorQueue.empty())
+
+	while (!m_localQueue.empty())
 	{
-		auto pAction = mgrInstance.m_executorQueue.back();
+		auto pAction = m_localQueue.back();
 		pAction->Act(this);
-		mgrInstance.m_executorQueue.pop_back();
+		m_localQueue.pop_back();
 	}
 
 	// Either suspend or end, depending on whether the executor has tasks not in Completed or Failed state, 
@@ -338,6 +348,7 @@ impl_ns::StartupTaskID impl_ns::StartupTaskManager::DefineStartupTask(const char
 		return impl_ns::INVALID_TASK;
 	}
 
+	// No point optimizing task definitions for local execution
 	std::unique_lock lk{ m_mutex };
 
 	StartupTaskID newTaskId = m_nextTaskId++;
@@ -345,28 +356,76 @@ impl_ns::StartupTaskID impl_ns::StartupTaskManager::DefineStartupTask(const char
 	auto pCreateTask = std::make_shared<DefineTaskAction>(newTaskId, std::string(taskName), pListener);
 	m_executorQueue.emplace_front(std::move(pCreateTask));
 
+	if (m_running)
+	{
+		ExecutionManager::GetInstance().SignalExecutor(m_execID,
+			ExecutorSignalType::WakeUp);
+	}
+
 	return newTaskId;
 }
 void impl_ns::StartupTaskManager::SetStartupDependencies(StartupTaskID taskId, const std::vector<std::string>& deps)
 {
 	std::unordered_set<std::string> depSet(deps.begin(), deps.end());
 
+	if (ExecutionManager::GetCurrentThreadName()
+		== startupThread_)
+	{
+		SetDependenciesAction taskAction(taskId, depSet);
+		m_pMyExecutor->HandleAction(taskAction);
+		return;
+	}
+
 	std::unique_lock lk{ m_mutex };
 	auto pSetDeps = std::make_shared<SetDependenciesAction>(taskId, depSet);
 	m_executorQueue.emplace_front(pSetDeps);
+
+	if (m_running)
+	{
+		ExecutionManager::GetInstance().SignalExecutor(m_execID,
+			ExecutorSignalType::WakeUp);
+	}
 }
 
 void impl_ns::StartupTaskManager::RunTask(StartupTaskID taskId)
 {
+	if (ExecutionManager::GetCurrentThreadName()
+		== startupThread_)
+	{
+		RunTaskAction taskAction(taskId);
+		m_pMyExecutor->HandleAction(taskAction);
+		return;
+	}
+
 	std::unique_lock lk{ m_mutex };
 	auto pRunTask = std::make_shared<RunTaskAction>(taskId);
 	m_executorQueue.emplace_front(std::move(pRunTask));
+
+	if (m_running)
+	{
+		ExecutionManager::GetInstance().SignalExecutor(m_execID,
+			ExecutorSignalType::WakeUp);
+	}
 }
 void impl_ns::StartupTaskManager::CompleteTask(StartupTaskID taskId, bool success, std::shared_ptr<ITaskResult> pResult)
 {
+	if (ExecutionManager::GetCurrentThreadName()
+		== startupThread_)
+	{
+		CompleteTaskAction taskAction(taskId, success, pResult);
+		m_pMyExecutor->HandleAction(taskAction);
+		return;
+	}
+
 	std::unique_lock lk{ m_mutex };
 	auto pCompleteTask = std::make_shared<CompleteTaskAction>(taskId, success, pResult);
 	m_executorQueue.emplace_front(std::move(pCompleteTask));
+
+	if (m_running)
+	{
+		ExecutionManager::GetInstance().SignalExecutor(m_execID,
+			ExecutorSignalType::WakeUp);
+	}
 }
 
 void impl_ns::StartupTaskManager::StartExecutor(bool stopWhenComplete)
@@ -374,9 +433,11 @@ void impl_ns::StartupTaskManager::StartExecutor(bool stopWhenComplete)
 	std::unique_lock lk{ m_mutex };
 	if (!m_running)
 	{
-		std::shared_ptr<IExecutor> pMyExecutor
+		m_pMyExecutor
 			= std::make_shared<StartupTaskExecutor>(stopWhenComplete);
-		ExecutionManager::GetInstance().AddExecutor("StartupBackgroundThread", pMyExecutor);
+		// Start the startup thread
+		// "singleton" means this executor has this thread exclusively
+		m_execID = ExecutionManager::GetInstance().AddExecutor(startupThread_, m_pMyExecutor, true);
 		m_running = true;
 	}
 }

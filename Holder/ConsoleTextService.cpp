@@ -37,7 +37,7 @@ std::shared_ptr < holder::service::IServiceLink > impl_ns::ConsoleTextService::C
 impl_ns::ConsoleTextService::ConsoleTextService(const holder::service::IServiceConfiguration& config)
 	:ServiceBase(config)
 {
-
+	ServiceBase::SetAutoCompleteStartup(true);
 }
 
 void impl_ns::ConsoleTextService::OnCreated()
