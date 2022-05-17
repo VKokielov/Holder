@@ -200,7 +200,7 @@ namespace holder::lib
 				return NodeResult::NeedDictionary;
 			}
 
-			if (!pNode->CreateChild(pNodeName, parentType, resultId))
+			if (!pNode->CreateChild(pNodeName, nodeType, resultId))
 			{
 				// Returns the existing node
 				return NodeResult::DuplicateName;
@@ -391,20 +391,23 @@ namespace holder::lib
 			NodeID retId{ NODE_ROOT };
 			if (nodeType == NodeType::Dictionary)
 			{
-				retId = SynthesizeID(nodeType, m_nextDict);
+				auto nextDictID = m_nextDict;
 				++m_nextDict;
+				retId = SynthesizeID(nodeType, nextDictID);
 
 				m_dictNodes.emplace(std::piecewise_construct,
-					                std::forward_as_tuple(retId), 
+					                std::forward_as_tuple(nextDictID),
 					                std::forward_as_tuple(*this, retId, parentId));
 			}
 			else
 			{
-				retId = SynthesizeID(nodeType, m_nextVal);
+				auto nextValID = m_nextVal;
 				++m_nextVal;
 
+				retId = SynthesizeID(nodeType, nextValID);
+
 				m_valNodes.emplace(std::piecewise_construct,
-					std::forward_as_tuple(retId),
+					std::forward_as_tuple(nextValID),
 					std::forward_as_tuple(*this, retId, parentId));
 			}
 			return retId;
