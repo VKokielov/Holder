@@ -123,8 +123,8 @@ void impl_ns::StartupTaskManager::StartupTaskExecutor::EvaluateDependencies(Task
 	if (nComplete == stateDesc.dependsOn.size()
 		&& stateDesc.dependsOnUndefined.empty())
 	{
-		stateDesc.pListener->OnTaskReady(stateDesc.id, *this);
 		stateDesc.state = TaskState::Ready;
+		stateDesc.pListener->OnTaskReady(stateDesc.id, *this);
 	}
 }
 
@@ -260,6 +260,7 @@ void impl_ns::StartupTaskManager::StartupTaskExecutor::HandleAction(const SetDep
 	// "Ready" is only possible when all dependencies are in "Completed" state.
 	taskState.failuresReported.clear();
 
+	taskState.state = TaskState::WaitingForDeps;
 	EvaluateDependencies(taskState);
 }
 
@@ -378,7 +379,7 @@ void impl_ns::StartupTaskManager::SetStartupDependencies(StartupTaskID taskId, c
 
 	std::unique_lock lk{ m_mutex };
 	auto pSetDeps = std::make_shared<SetDependenciesAction>(taskId, depSet);
-	m_executorQueue.emplace_front(pSetDeps);
+	m_executorQueue.emplace_front(std::move(pSetDeps));
 
 	if (m_running)
 	{
