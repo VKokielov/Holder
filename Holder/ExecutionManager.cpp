@@ -404,6 +404,8 @@ void impl_ns::ExecutionManager::TimerThread::ProcessTimerMessage(const TimerMess
 			timerEntry.timerIndex = newTimerIndex;
 			timerEntry.nextBeat = std::chrono::steady_clock::now();
 			timerEntry.nextBeat += msg.timerDef.timeInterval;
+
+			m_timerPriorities.emplace(timerEntry);
 		}
 	}
 	else if (msg.tag == TimerInstructionTag::Cancel)

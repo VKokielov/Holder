@@ -162,10 +162,10 @@ namespace holder::lib
 			}
 			else if (pathIdx == pathSize - 1)
 			{
-				m_nodeId = nodeId;
 				return TraceAction::CreateValue;
 			}
 
+			m_nodeId = nodeId;
 			// Otherwise we would expect the last value to have been created
 			return wasCreated ? TraceAction::OK : TraceAction::StopTrace;
 		}
@@ -193,7 +193,8 @@ namespace holder::lib
 			{
 				return TraceAction::FindChild;
 			}
-			
+
+			m_nodeId = nodeId;
 			return TraceAction::OK;
 		}
 

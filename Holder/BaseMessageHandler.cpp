@@ -10,12 +10,10 @@ void impl_ns::BaseMessageHandler::CreateReceiver()
 	}
 
 	auto pLocalDispatcher = m_pDispatcher.lock();
-	auto pLocalFilter = m_pFilter.lock();
-
-	if (pLocalDispatcher && pLocalFilter)
+	if (pLocalDispatcher)
 	{
 		m_myReceiverID = pLocalDispatcher->CreateReceiver(GetMyBaseHandlerSharedPtr(), 
-			pLocalFilter, 
+			m_pFilter, 
 			0);
 		m_hasReceiver = true;
 	}

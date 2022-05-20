@@ -36,7 +36,7 @@ impl_ns::MessageDequeDispatcher::CreateReceiver(const std::shared_ptr<msg_ns::IM
 		std::forward_as_tuple(m_freeRcvId), 
 		std::forward_as_tuple(m_freeRcvId, dispatchId, pListener, pFilter));
 
-	return 	++m_freeRcvId;;
+	return 	m_freeRcvId++;
 }
 
 std::shared_ptr<impl_ns::ISenderEndpoint> impl_ns::MessageDequeDispatcher::CreateEndpoint(ReceiverID rcvrId)

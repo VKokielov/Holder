@@ -30,7 +30,8 @@ namespace holder::messages
 		public:
 			MQDEnvelope(std::shared_ptr<IMessage> pMessage,
 				ReceiverID receiverID)
-				:m_receiverID(receiverID)
+				:m_pMessage(pMessage),
+				m_receiverID(receiverID)
 			{ }
 
 			MQDEnvelope(MQDEnvelope&&) = default;

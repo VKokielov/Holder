@@ -50,7 +50,7 @@ namespace holder::messages
 
 	private:
 		std::weak_ptr<IMessageDispatcher> m_pDispatcher;
-		std::weak_ptr<IMessageFilter> m_pFilter;
+		std::shared_ptr<IMessageFilter> m_pFilter;
 
 		ReceiverID m_myReceiverID;
 		bool m_hasReceiver{ false };
