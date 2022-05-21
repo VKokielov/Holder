@@ -191,7 +191,10 @@
     <ClInclude Include="IAppObject.h" />
     <ClInclude Include="IAppObjectFactory.h" />
     <ClInclude Include="IExecutor.h" />
+    <ClInclude Include="INetworkService.h" />
     <ClInclude Include="IProxy.h" />
+    <ClInclude Include="IPublishSubscribe.h" />
+    <ClInclude Include="IRequestResponse.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="ISharedObject.h" />
     <ClInclude Include="ITextService.h" />

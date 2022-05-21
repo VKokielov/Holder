@@ -68,6 +68,10 @@ bool impl_ns::BaseStarter::Run()
 		return false;
 	}
 
+#ifdef _WIN32
+	WinInstallInterruptHandler();
+#endif
+
 	std::chrono::microseconds wakeupTime(100 * 1000);
 	// RunLoop continues to run until all threads terminate or termination is requested
 	base::ExecutionManager::GetInstance().RunLoop(wakeupTime);

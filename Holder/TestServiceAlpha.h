@@ -17,14 +17,16 @@ namespace holder::test
 		class TextSender : public base::ITimerCallback
 		{
 		public:
-			TextSender(std::shared_ptr<stream::ITextServiceProxy> pProxy)
-				:m_pTextProxy(std::move(pProxy))
+			TextSender(std::shared_ptr<stream::ITextServiceProxy> pProxy, unsigned long limit)
+				:m_pTextProxy(std::move(pProxy)),
+				m_limit(limit)
 			{ }
 
 			void OnTimer(base::TimerID timerId) override;
 		private:
 			std::shared_ptr<stream::ITextServiceProxy> m_pTextProxy;
 			unsigned long m_counter{ 0 };
+			unsigned long m_limit{ 0 };
 		};
 
 	public:

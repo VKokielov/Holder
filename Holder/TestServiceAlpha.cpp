@@ -35,6 +35,11 @@ void impl_ns::TestServiceAlpha::TextSender::OnTimer(holder::base::TimerID timerI
 
 	std::string sText(ssm.str());
 	m_pTextProxy->OutputString(sText.c_str());
+
+	if (m_limit != 0 && m_counter == m_limit)
+	{
+		base::ExecutionManager::GetInstance().CancelTimer("/service/TestServiceAlpha/TestTimer");
+	}
 }
 
 bool impl_ns::TestServiceAlpha::Init()
@@ -61,7 +66,7 @@ bool impl_ns::TestServiceAlpha::Init()
 	}
 
 	// Create a stimulator
-	auto pStimulator = std::make_shared<TextSender>(pProxy);
+	auto pStimulator = std::make_shared<TextSender>(pProxy, 10);
 
 	// Submit the stimulator to the execution manager
 	base::ExecutionManager::GetInstance().SetTimer("/service/TestServiceAlpha/TestTimer",

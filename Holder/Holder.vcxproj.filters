@@ -206,5 +206,14 @@
     <ClInclude Include="TestServiceAlpha.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="INetworkService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IRequestResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IPublishSubscribe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
