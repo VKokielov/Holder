@@ -4,6 +4,7 @@
 #include "BaseRequestMessages.h"
 #include "ServiceMessageLib.h"
 #include "BaseRequestInfo.h"
+#include "ExecutionManager.h"
 #include <unordered_map>
 
 namespace holder::reqresp
@@ -74,6 +75,7 @@ namespace holder::reqresp
 
 		template<typename RequestInitializer>
 		RequestID IssueRequest(RequestInfo&& reqData,
+			const std::shared_ptr<messages::ISenderEndpoint>& pRequest
 			unsigned long timeout)
 		{
 			// Create a request and send a message to the remote with the request
