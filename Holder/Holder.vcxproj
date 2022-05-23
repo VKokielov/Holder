@@ -157,6 +157,8 @@
     <ClCompile Include="BaseClientObject.cpp" />
     <ClCompile Include="BaseMessageHandler.cpp" />
     <ClCompile Include="BaseProxy.cpp" />
+    <ClCompile Include="BaseRequestInfo.cpp" />
+    <ClCompile Include="BaseRequestIssuer.cpp" />
     <ClCompile Include="BaseServiceConfiguration.cpp" />
     <ClCompile Include="BaseServiceLink.cpp" />
     <ClCompile Include="BaseStarter.cpp" />
@@ -180,9 +182,12 @@
     <ClInclude Include="BaseClientObject.h" />
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
+    <ClInclude Include="BaseRequestInfo.h" />
+    <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
-    <ClInclude Include="BaseServiceLink.h" />
+    <ClInclude Include="RequestDeltas.h" />
+    <ClInclude Include="ServiceMessageLib.h" />
     <ClInclude Include="BaseServiceObject.h" />
     <ClInclude Include="BaseStarter.h" />
     <ClInclude Include="CloneHelper.h" />
@@ -194,6 +199,7 @@
     <ClInclude Include="INetworkService.h" />
     <ClInclude Include="IProxy.h" />
     <ClInclude Include="IPublishSubscribe.h" />
+    <ClInclude Include="BaseRequestMessages.h" />
     <ClInclude Include="IRequestResponse.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="ISharedObject.h" />

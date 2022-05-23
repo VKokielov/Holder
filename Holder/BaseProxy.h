@@ -3,7 +3,7 @@
 #include "IService.h"
 #include "Messaging.h"
 #include "IProxy.h"
-#include "BaseServiceLink.h"
+#include "ServiceMessageLib.h"
 
 namespace holder::service
 {

@@ -75,6 +75,12 @@
     <ClCompile Include="TestStarter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BaseRequestIssuer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseRequestInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAppObject.h">
@@ -176,9 +182,6 @@
     <ClInclude Include="BaseMessageHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BaseServiceLink.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BaseServiceObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -213,6 +216,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IPublishSubscribe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseRequestIssuer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseRequestMessages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ServiceMessageLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseRequestInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RequestDeltas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

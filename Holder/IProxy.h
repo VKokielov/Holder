@@ -18,7 +18,7 @@ namespace holder::service
 	class IServiceMessage : public messages::IMessage
 	{
 	public:
-		virtual bool IsDestroyMessage() = 0;
+		virtual bool IsDestroyMessage() const = 0;
 		virtual void Act(IServiceLink& object) = 0;
 	};
 

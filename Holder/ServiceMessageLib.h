@@ -21,7 +21,6 @@ namespace holder::service
 		void Act(IServiceLink& object) override;
 	};
 
-
 	template<typename Derived,
 		     typename Client>
 	class TypedServiceMessage : public IServiceMessage
