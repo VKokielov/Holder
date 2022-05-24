@@ -6,6 +6,7 @@
 #include "SharedObjects.h"
 #include "SharedObjectStore.h"
 #include "StartupTaskManager.h"
+#include "TypeTagDisp.h"
 
 #include <type_traits>
 #include <memory>
@@ -256,5 +257,9 @@ namespace holder::service
 
 	template<typename Base>
 	using MQDBaseService = BaseService<messages::MQDExecutor, Base>;
+
+	template<typename MsgHandler>
+	using MessageDispatch = base::types::TypeTagsDisp<MsgHandler, messages::IMessage,
+		messages::DispatchID>;
 
 }

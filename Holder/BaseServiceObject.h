@@ -21,7 +21,11 @@ namespace holder::service
 	class CreateProxyMessage : public messages::IMessage
 	{
 	public:
-		const base::types::TypeTag& GetTag() const override
+		CreateProxyMessage(std::shared_ptr<messages::IMessageDispatcher> pDispatcher)
+			:m_pDispatcher(pDispatcher)
+		{ }
+
+		base::types::TypeTag GetTag() const override
 		{
 			return base::constants::GetCreateProxyMessageTag();
 		}
@@ -73,9 +77,9 @@ namespace holder::service
 				return;
 			}
 
-			auto rServiceMessage = static_cast<IServiceMessage&>(rMsg);
+			auto& rServiceMessage = static_cast<IServiceMessage&>(rMsg);
 
-			pServiceMessage.Act(*pClient);
+			rServiceMessage.Act(*pClient);
 		}
 
 		void OnDestroyMessage(messages::IMessage& rMsg,
@@ -136,9 +140,8 @@ namespace holder::service
 				return CreateProxyLocal(pRemoteDispatcher);
 			}
 
-			auto pDefaultEndpoint = m_pDefaultEndpoint.lock();
 
-			if (!pDefaultEndpoint)
+			if (!m_pDefaultEndpoint)
 			{
 				return std::shared_ptr<IServiceLink>();
 			}
@@ -150,7 +153,7 @@ namespace holder::service
 
 			auto proxyFuture = pCreateProxyMessage->GetFuture();
 
-			pDefaultEndpoint->SendMessage(pCreateProxyMessage);
+			m_pDefaultEndpoint->SendMessage(pCreateProxyMessage);
 
 			proxyFuture.wait();
 
@@ -238,8 +241,8 @@ namespace holder::service
 		// Local dispatcher
 		std::weak_ptr<messages::IMessageDispatcher>  m_pLocalDispatcher;
 		// Default receiver and endpoint
-		messages::ReceiverID m_defaultReceiver{};
-		std::weak_ptr<messages::ISenderEndpoint> m_pDefaultEndpoint;
+		messages::ReceiverID m_defaultReceiverID{};
+		std::shared_ptr<messages::ISenderEndpoint> m_pDefaultEndpoint;
 	};
 
 

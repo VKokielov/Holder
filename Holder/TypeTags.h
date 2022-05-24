@@ -24,7 +24,7 @@ namespace holder::base::types
 		TypeTag(const TypeTag& other) = default;
 		TypeTag& operator=(const TypeTag& other) = default;
 
-		bool operator==(const TypeTag& other)
+		bool operator==(const TypeTag& other) const
 		{
 			return m_typeID == other.m_typeID;
 		}

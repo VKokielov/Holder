@@ -31,10 +31,10 @@ namespace holder::messages
 
 			Derived* pThisDerived = static_cast<Derived*>(this);
 
-			auto& dispTable = Derived::g_tagMessageDispatch;
+			auto& dispTable = Derived::GetMessageDispatchTable();
 
 			if (!dispTable(pThisDerived, pMsg->GetTag(),
-				pMsg.get(), dispatchID))
+				*pMsg.get(), dispatchID))
 			{
 				OnUnknownMessage(pMsg, dispatchID);
 			}

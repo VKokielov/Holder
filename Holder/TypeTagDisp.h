@@ -13,16 +13,18 @@ namespace holder::base::types
 	class TypeTagsDisp
 	{
 	public:
-		TypeTagsDisp(const TypeTagsDisp&) = delete;
+		using DispMember = void (Subject::*)(Object&, Satellites...);
 
-		using DispMember = void (Subject::*)(const Object&, Satellites...);
+		TypeTagsDisp(const TypeTagsDisp&) = delete;
 
 		TypeTagsDisp()
 		{
 			// Should be a static member of the subject class
 			// the second argument is a disambiguator
+			
 			Subject::InitializeTagDispatch(static_cast<const Object*>(nullptr), 
 				*this);
+				
 		}
 
 		void AddDispatch(const TypeTag& tag,
@@ -36,11 +38,13 @@ namespace holder::base::types
 			}
 		}
 
+		template<typename ... Args>
 		bool operator()(Subject* pThis, 
 			const TypeTag& tag,
-			Object& obj,
-			Satellites&&... sat)
+			Object& obj, 
+			Args&& ... args)
 		{
+			/*
 			if (!pThis)
 			{
 				return false;
@@ -54,8 +58,8 @@ namespace holder::base::types
 
 			DispMember callPtr = itObj->second;
 
-			pThis->*(callPtr)(obj, std::forward<Satellites>(sat)...);
-
+			pThis->*(callPtr)(obj, std::forward<Args>(args)...);
+			*/
 			return true;
 		}
 

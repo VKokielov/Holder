@@ -9,7 +9,7 @@ bool impl_ns::ServiceMessageFilter::CanSendMessage(const messages::IMessage& msg
 	return dynamic_cast<const IServiceMessage*>(&msg) != nullptr;
 }
 
-const holder::base::types::TypeTag& impl_ns::DestroyClientMessage::GetTag() const
+holder::base::types::TypeTag impl_ns::DestroyClientMessage::GetTag() const
 {
 	return holder::base::constants::GetDestroyMessageTag();
 }

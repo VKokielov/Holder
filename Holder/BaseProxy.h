@@ -18,8 +18,6 @@ namespace holder::service
 		BaseProxy(const std::shared_ptr<messages::IMessageDispatcher>& pDispatcher,
 			std::shared_ptr<messages::ISenderEndpoint> pEndpoint);
 
-	//	void OnMessage(const std::shared_ptr<messages::IMessage>& pMsg,
-	//		messages::DispatchID dispatchId) override;
 		messages::ReceiverID GetReceiverID() const;
 
 		~BaseProxy();

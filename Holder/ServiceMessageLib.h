@@ -18,7 +18,7 @@ namespace holder::service
 	class DestroyClientMessage : public messages::IMessage
 	{
 	public:
-		const base::types::TypeTag& GetTag() const override;
+		base::types::TypeTag GetTag() const override;
 	};
 
 	template<typename Derived,
@@ -26,7 +26,7 @@ namespace holder::service
 	class TypedServiceMessage : public IServiceMessage
 	{
 	public:
-		const base::types::TypeTag& GetTag() const override
+		base::types::TypeTag GetTag() const override
 		{
 			return base::constants::GetServiceMessageTag();
 		}
@@ -41,7 +41,7 @@ namespace holder::service
 	void SendMessage(const std::shared_ptr<messages::ISenderEndpoint>& pCounterpart,
 		Args&& ... args)
 	{
-		static_assert(std::is_base_of_v<IServiceMessage, Msg>, "Can only send classes deriving from IServiceMessage");
+		static_assert(std::is_base_of_v<messages::IMessage, Msg>, "Can only send classes deriving from IServiceMessage");
 		auto pMsg = std::make_shared<Msg>(std::forward<Args>(args)...);
 
 		if (!pCounterpart->SendMessage(pMsg))

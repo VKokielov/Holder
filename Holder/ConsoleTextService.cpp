@@ -23,10 +23,30 @@ void impl_ns::ConsoleTextService::ConsoleTextMessage::TypedAct(ConsoleTextClient
 	std::cout << m_text;
 }
 
+holder::service::MessageDispatch<impl_ns::ConsoleTextProxy>& impl_ns::ConsoleTextProxy::GetMessageDispatchTable()
+{
+	static holder::service::MessageDispatch<impl_ns::ConsoleTextProxy> dispatch;
+	return dispatch;
+}
+
+void impl_ns::ConsoleTextProxy::OnMessage(const std::shared_ptr<holder::messages::IMessage>& pMsg, 
+	holder::messages::DispatchID dispatchID)
+{
+	BaseMessageDispatch::DispatchMessage<ConsoleTextProxy>(pMsg, dispatchID);
+}
+
 
 void impl_ns::ConsoleTextProxy::OutputString(const char* pString)
 {
 	service::SendMessage<ConsoleTextService::ConsoleTextMessage>(BaseProxy::CntPart(), pString);
+}
+
+// ConsoleTextService
+
+holder::service::MessageDispatch<impl_ns::ConsoleTextService>& impl_ns::ConsoleTextService::GetMessageDispatchTable()
+{
+	static holder::service::MessageDispatch<impl_ns::ConsoleTextService> dispatch;
+	return dispatch;
 }
 
 std::shared_ptr < holder::service::IServiceLink > impl_ns::ConsoleTextService::CreateProxy(const std::shared_ptr<holder::messages::IMessageDispatcher>& pReceiver)
@@ -43,9 +63,18 @@ impl_ns::ConsoleTextService::ConsoleTextService(const holder::service::IServiceC
 void impl_ns::ConsoleTextService::OnCreated()
 {
 	SOBase::SetDispatcher(GetMyMessageDispatcherSharedPtr());
+	SOBase::SetThreadName(ServiceBase::GetExecutionThreadName());
+
 	ServiceBase::OnCreated();
 }
 
+
+
+void impl_ns::ConsoleTextService::OnMessage(const std::shared_ptr<holder::messages::IMessage>& pMsg,
+	holder::messages::DispatchID dispatchID)
+{
+	BaseMessageDispatch::DispatchMessage<ConsoleTextService>(pMsg, dispatchID);
+}
 std::shared_ptr<holder::messages::MessageDequeDispatcher> impl_ns::ConsoleTextService::GetMyMessageDispatcherSharedPtr()
 {
 	return shared_from_this();
@@ -54,7 +83,6 @@ std::shared_ptr<holder::messages::IMessageListener> impl_ns::ConsoleTextService:
 {
 	return shared_from_this();
 }
-
 std::shared_ptr<holder::base::startup::ITaskStateListener> 
 impl_ns::ConsoleTextService::GetMyTaskStateListenerSharedPtr()
 {
