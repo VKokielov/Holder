@@ -7,6 +7,7 @@
 #include "IProxy.h"
 #include "TypeTagDisp.h"
 #include "MessageTypeTags.h"
+#include "ExecutionManager.h"
 
 #include <vector>
 #include <type_traits>
@@ -36,6 +37,11 @@ namespace holder::service
 			m_serviceLinkPromise.set_value(pProxy);
 		}
 		
+		std::future< std::shared_ptr<IServiceLink> >
+			GetFuture()
+		{
+			return m_serviceLinkPromise.get_future();
+		}
 	private:
 		std::shared_ptr< messages::IMessageDispatcher> m_pDispatcher;
 		std::promise<std::shared_ptr<IServiceLink> >
@@ -100,11 +106,22 @@ namespace holder::service
 		BaseServiceObject()
 		{ }
 
+		void SetThreadName(const char* pThreadName)
+		{
+			m_threadName = pThreadName;
+		}
+
 		virtual std::shared_ptr<IMessageListener>
 			GetMyListenerSharedPtr() = 0;
 
 		void SetDispatcher(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
 		{
+			// Create a default receiver and endpoint
+			m_defaultReceiverID = pLocalDispatcher->CreateReceiver(GetMyListenerSharedPtr(),
+				std::shared_ptr<messages::IMessageFilter>(),
+				0);
+
+			m_pDefaultEndpoint = pLocalDispatcher->CreateEndpoint(m_defaultReceiverID);
 			m_pLocalDispatcher = pLocalDispatcher;
 		}
 
@@ -113,10 +130,31 @@ namespace holder::service
 		{
 			// NOTE:  This function acts differently depending on where we are operating
 			// From within the service's thread, it simply calls GetProxyLocal()
+			if (base::ExecutionManager::GetInstance().GetCurrentThreadName()
+				== m_threadName)
+			{
+				return CreateProxyLocal(pRemoteDispatcher);
+			}
+
+			auto pDefaultEndpoint = m_pDefaultEndpoint.lock();
+
+			if (!pDefaultEndpoint)
+			{
+				return std::shared_ptr<IServiceLink>();
+			}
+			
 			// Otherwise it uses a promise and a future to execute this same procedure
 			// on the remote thread of the service
+			auto pCreateProxyMessage =
+				std::make_shared<CreateProxyMessage>(pRemoteDispatcher);
 
+			auto proxyFuture = pCreateProxyMessage->GetFuture();
 
+			pDefaultEndpoint->SendMessage(pCreateProxyMessage);
+
+			proxyFuture.wait();
+
+			return proxyFuture.get();
 		}
 	private:
 
@@ -142,7 +180,7 @@ namespace holder::service
 			// First create a receiver for this client object
 			messages::ReceiverID receiverID
 				= pLocalDispatcher->CreateReceiver(GetMyListenerSharedPtr(),
-					std::make_shared<ServiceMessageFilter>(),
+					std::shared_ptr<messages::IMessageFilter>(),
 					clientID);
 
 			auto pClientEndpoint = pLocalDispatcher->CreateEndpoint(receiverID);
@@ -192,11 +230,16 @@ namespace holder::service
 
 		friend class CreateProxyMessage;
 
+		std::string m_threadName;
+
 		std::unordered_map<messages::DispatchID, Client> m_clientMap;
 		messages::DispatchID m_nextClientID{ 0 };
 
 		// Local dispatcher
 		std::weak_ptr<messages::IMessageDispatcher>  m_pLocalDispatcher;
+		// Default receiver and endpoint
+		messages::ReceiverID m_defaultReceiver{};
+		std::weak_ptr<messages::ISenderEndpoint> m_pDefaultEndpoint;
 	};
 
 

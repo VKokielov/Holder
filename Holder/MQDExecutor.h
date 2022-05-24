@@ -1,9 +1,11 @@
 #pragma once
 
-#include <string>
-
 #include "MessageDequeDispatcher.h"
 #include "ExecutionManager.h"
+
+#include <atomic>
+#include <string>
+
 
 namespace holder::messages
 {
@@ -23,11 +25,13 @@ namespace holder::messages
 		MQDExecutor(const char* pThreadName, bool traceLostMessages);
 		void InitExecutor();
 		void DoSignal() override;
+		base::ExecutorID GetExecutorID() const { return m_myExecutor.load(); }
 
+		const char* GetExecutionThreadName() const { return m_threadName.c_str(); }
 
 	private:
 		std::string m_threadName;
-		base::ExecutorID m_myExecutor{ base::EXEC_WILDCARD };
+		std::atomic<base::ExecutorID> m_myExecutor{ base::EXEC_WILDCARD };
 		bool m_endRequested{ false };
 	};
 

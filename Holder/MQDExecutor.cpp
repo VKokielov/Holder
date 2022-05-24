@@ -9,14 +9,14 @@ impl_ns::MQDExecutor::MQDExecutor(const char* pthreadName, bool traceLostMessage
 
 void impl_ns::MQDExecutor::InitExecutor()
 {
-	if (m_myExecutor == base::EXEC_WILDCARD)
+	if (m_myExecutor.load() == base::EXEC_WILDCARD)
 	{
 		auto pMyBase = GetMyMessageDispatcherSharedPtr();
 
 		auto pMe = std::static_pointer_cast<MQDExecutor>(pMyBase);
 
-		m_myExecutor = base::ExecutionManager::GetInstance().AddExecutor(m_threadName.c_str(),
-			pMe);
+		m_myExecutor.store(base::ExecutionManager::GetInstance().AddExecutor(m_threadName.c_str(),
+			pMe));
 	}
 }
 
@@ -46,7 +46,7 @@ void impl_ns::MQDExecutor::TerminationRequested()
 
 void impl_ns::MQDExecutor::DoSignal()
 {
-	base::ExecutionManager::GetInstance().SignalExecutor(m_myExecutor, base::ExecutorSignalType::WakeUp);
+	base::ExecutionManager::GetInstance().SignalExecutor(m_myExecutor.load(), base::ExecutorSignalType::WakeUp);
 }
 
 bool impl_ns::MQDExecutor::Init()
