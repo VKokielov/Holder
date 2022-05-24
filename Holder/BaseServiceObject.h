@@ -1,18 +1,46 @@
 #pragma once
 
 #include "BaseMessageHandler.h"
-#include "BaseServiceLink.h"
+#include "ServiceMessageLib.h"
 #include "BaseClientObject.h"
 #include "BaseProxy.h"
 #include "IProxy.h"
+#include "TypeTagDisp.h"
+#include "MessageTypeTags.h"
 
 #include <vector>
 #include <type_traits>
 #include <shared_mutex>
 #include <memory>
+#include <future>
 
 namespace holder::service
 {
+
+	class CreateProxyMessage : public messages::IMessage
+	{
+	public:
+		const base::types::TypeTag& GetTag() const override
+		{
+			return base::constants::GetCreateProxyMessageTag();
+		}
+
+		template<typename ServiceObject>
+		void Act(ServiceObject& obj)
+		{
+			// This function invokes the CreateProxyLocal function on the service object
+			// in question and stores the result into the associated Promise
+
+			auto pProxy = obj.CreateProxyLocal(std::move(m_pDispatcher));
+
+			m_serviceLinkPromise.set_value(pProxy);
+		}
+		
+	private:
+		std::shared_ptr< messages::IMessageDispatcher> m_pDispatcher;
+		std::promise<std::shared_ptr<IServiceLink> >
+			m_serviceLinkPromise;
+	};
 
 	template<typename D, typename Proxy, typename Client>
 	class BaseServiceObject : public messages::IMessageListener
@@ -22,20 +50,16 @@ namespace holder::service
 		static_assert(std::is_base_of_v<BaseProxy, Proxy>, "Proxy must derive from BaseProxy");
 		static_assert(std::is_base_of_v<BaseClientObject, Client>, "Client must derive from BaseClientObject");
 	public:
-		void OnMessage(const std::shared_ptr<messages::IMessage>& pMsg,
-			messages::DispatchID dispatchID) override
+		void OnServiceMessage(messages::IMessage& rMsg,
+			messages::DispatchID dispatchID)
 		{
 			Client* pClient{ nullptr };
 
+			auto itClient = m_clientMap.find(dispatchID);
+
+			if (itClient != m_clientMap.end())
 			{
-				std::shared_lock lk{ m_mutex };
-
-				auto itClient = m_clientMap.find(dispatchID);
-
-				if (itClient != m_clientMap.end())
-				{
-					pClient = &itClient->second;
-				}
+				pClient = &itClient->second;
 			}
 
 			if (!pClient)
@@ -43,17 +67,33 @@ namespace holder::service
 				return;
 			}
 
-			auto pServiceMessage = static_cast<IServiceMessage*>(pMsg.get());
+			auto rServiceMessage = static_cast<IServiceMessage&>(rMsg);
 
-			if (pServiceMessage->IsDestroyMessage())
-			{
-				// Remove the client
-				RemoveClient(dispatchID);
-				return;
-			}
+			pServiceMessage.Act(*pClient);
+		}
 
-			// Otherwise simply act
-			pServiceMessage->Act(*pClient);
+		void OnDestroyMessage(messages::IMessage& rMsg,
+			messages::DispatchID dispatchID)
+		{
+			RemoveClient(dispatchID);
+		}
+
+		void OnCreateProxyMessage(messages::IMessage& rMsg,
+			messages::DispatchID dispatchID)
+		{
+			static_cast<CreateProxyMessage&>(rMsg).Act(*this);
+		}
+
+		template<typename TagDispatch>
+		static void InitializeTagDispatch(const messages::IMessage*,
+			TagDispatch& tagDispatchTable)
+		{
+			tagDispatchTable.AddDispatch(base::constants::GetServiceMessageTag(),
+				&BaseServiceObject::OnServiceMessage);
+			tagDispatchTable.AddDispatch(base::constants::GetDestroyMessageTag(),
+				&BaseServiceObject::OnDestroyMessage);
+			tagDispatchTable.AddDispatch(base::constants::GetCreateProxyMessageTag(),
+				&BaseServiceObject::OnCreateProxyMessage);
 		}
 
 	protected:
@@ -71,8 +111,18 @@ namespace holder::service
 		std::shared_ptr<IServiceLink>
 			CreateProxy_(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
 		{
-			std::unique_lock lk{ m_mutex };
+			// NOTE:  This function acts differently depending on where we are operating
+			// From within the service's thread, it simply calls GetProxyLocal()
+			// Otherwise it uses a promise and a future to execute this same procedure
+			// on the remote thread of the service
 
+
+		}
+	private:
+
+		std::shared_ptr<IServiceLink>
+			CreateProxyLocal(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
+		{
 			auto pLocalDispatcher = m_pLocalDispatcher.lock();
 			std::shared_ptr<IServiceLink> pServiceLink;
 			std::shared_ptr<Proxy> pProxy;
@@ -115,12 +165,9 @@ namespace holder::service
 
 			return pServiceLink;
 		}
-	private:
-
 		void RemoveClient(messages::DispatchID clientID)
 		{
 			// Remove a client from the dispatcher and by removing it from the map
-			std::unique_lock lk{ m_mutex };
 
 			auto itClient = m_clientMap.find(clientID);
 
@@ -141,10 +188,10 @@ namespace holder::service
 
 			// Remove the client
 			m_clientMap.erase(itClient);
-
 		}
 
-		std::shared_mutex m_mutex;
+		friend class CreateProxyMessage;
+
 		std::unordered_map<messages::DispatchID, Client> m_clientMap;
 		messages::DispatchID m_nextClientID{ 0 };
 

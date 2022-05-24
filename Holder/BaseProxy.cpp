@@ -5,17 +5,17 @@ namespace messages = holder::messages;
 
 impl_ns::BaseProxy::BaseProxy(const std::shared_ptr<messages::IMessageDispatcher>& pDispatcher,
 	std::shared_ptr<messages::ISenderEndpoint> pClientEndpoint)
-	:BaseMessageHandler(pDispatcher,  std::make_shared<ServiceMessageFilter>()),
+	:BaseMessageHandler(pDispatcher),
 	m_pCounterpart(pClientEndpoint)
 {
 
 }
 
-void impl_ns::BaseProxy::OnMessage(const std::shared_ptr<messages::IMessage>& pMsg,
+void impl_ns::BaseProxy::OnServiceMessage(messages::IMessage& rMsg,
 	messages::DispatchID dispatchId)
 {
 	// Act on the proxy
-	static_cast<IServiceMessage&>(*pMsg).Act(*this);
+	static_cast<IServiceMessage&>(rMsg).Act(*this);
 }
 
 holder::messages::ReceiverID impl_ns::BaseProxy::GetReceiverID() const

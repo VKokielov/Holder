@@ -10,9 +10,6 @@ namespace holder::reqresp
 	// Messages going TO request handler
 	class RequestOutgoingMessage : public service::IServiceMessage
 	{
-	public:
-		bool IsDestroyMessage() const override { return false; }
-
 	protected:
 		RequestOutgoingMessage(RequestID requestID)
 			:m_requestID(requestID)
@@ -31,7 +28,7 @@ namespace holder::reqresp
 		RequestIssueMessage(RequestInitializer&& requestInitializer,
 			RequestID requestID)
 			:RequestOutgoingMessage(requestID),
-			m_requestInitializer(std::move(requestInitializer)),
+			m_requestInitializer(std::move(requestInitializer))
 		{ }
 
 		void Act(service::IServiceLink& object) override

@@ -2,6 +2,7 @@
 
 #include "BaseMessageHandler.h"
 #include "IProxy.h"
+#include "MessageTypeTags.h"
 
 namespace holder::service
 {
@@ -14,11 +15,10 @@ namespace holder::service
 		bool CanSendMessage(const messages::IMessage& msg) override;
 	};
 
-	class DestroyClientMessage : public IServiceMessage
+	class DestroyClientMessage : public messages::IMessage
 	{
 	public:
-		bool IsDestroyMessage() override;
-		void Act(IServiceLink& object) override;
+		const base::types::TypeTag& GetTag() const override;
 	};
 
 	template<typename Derived,
@@ -26,7 +26,11 @@ namespace holder::service
 	class TypedServiceMessage : public IServiceMessage
 	{
 	public:
-		bool IsDestroyMessage() override { return false; }
+		const base::types::TypeTag& GetTag() const override
+		{
+			return base::constants::GetServiceMessageTag();
+		}
+
 		void Act(IServiceLink& object) override
 		{
 			static_cast<Derived*>(this)->TypedAct(static_cast<Client&>(object));

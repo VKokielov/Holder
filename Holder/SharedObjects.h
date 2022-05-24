@@ -3,7 +3,6 @@
 #include "IAppObject.h"
 #include "ISharedObject.h"
 #include "RaiiLambda.h"
-#include "TypeInfoObjs.h"
 #include "MiniSpinMutex.h"
 
 #include <cinttypes>
@@ -70,17 +69,10 @@ namespace holder::base
 			return m_pObj.get();
 		}
 
-		TypeID GetTypeID() const
-		{
-			return m_typeId;
-		}
-
 	protected:
-		SharedObjectWrapper(std::shared_ptr<ISharedObject> pObj,
-			TypeID typeId)
+		SharedObjectWrapper(std::shared_ptr<ISharedObject> pObj)
 			:m_pObj(pObj),
-			m_objId(m_freeObjId++),
-			m_typeId(typeId)
+			m_objId(m_freeObjId++)
 		{
 
 		}
@@ -102,8 +94,6 @@ namespace holder::base
 		LockFreeState   m_lfState{ LockFreeState::None };
 		std::shared_mutex m_rwMutex;
 		std::shared_ptr<ISharedObject> m_pObj;
-
-		TypeID m_typeId;
 	};
 
 	template<typename T>
@@ -113,7 +103,7 @@ namespace holder::base
 		static_assert(std::is_base_of_v<ISharedObject, T>, "TypedSharedObjectWrapper: must refer to a subtype of ISharedObject");
 	public:
 		TypedSharedObjectWrapper(std::shared_ptr<T> pObj)
-			:SharedObjectWrapper(pObj, TypeInfo<T>::type_id)
+			:SharedObjectWrapper(pObj)
 		{ }
 	};
 
@@ -122,7 +112,7 @@ namespace holder::base
 	// but does help to prevent the escape of these objects
 	// If they must be used by some function, they should be passed in as references
 	// Better yet, use Get() and the underlying pointer
-	template<typename T, bool checked = false>
+	template<typename T>
 	class LockedSharedObjectRef
 	{
 	private:
@@ -135,14 +125,6 @@ namespace holder::base
 		LockedSharedObjectRef(SharedObjectWrapper& rWrapper)
 			:m_owner(rWrapper)
 		{
-			if constexpr (checked)
-			{
-				if (m_owner.GetTypeID() != TypeInfo<T>::type_id)
-				{
-					throw InvalidObjTypeException();
-				}
-			}
-
 			m_ptr = static_cast<T*>(m_owner.Get());
 
 			// Lock

@@ -1,4 +1,5 @@
-#include "BaseServiceLink.h"
+#include "ServiceMessageLib.h"
+#include "MessageTypeTags.h"
 
 namespace impl_ns = holder::service;
 namespace messages = holder::messages;
@@ -8,12 +9,7 @@ bool impl_ns::ServiceMessageFilter::CanSendMessage(const messages::IMessage& msg
 	return dynamic_cast<const IServiceMessage*>(&msg) != nullptr;
 }
 
-bool impl_ns::DestroyClientMessage::IsDestroyMessage()
+const holder::base::types::TypeTag& impl_ns::DestroyClientMessage::GetTag() const
 {
-	return true;
-}
-
-void impl_ns::DestroyClientMessage::Act(IServiceLink& object)
-{
-
+	return holder::base::constants::GetDestroyMessageTag();
 }

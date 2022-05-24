@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "IAppObject.h"
-#include "TypeID.h"
 #include "Messaging.h"
 
 namespace holder::base

@@ -18,9 +18,6 @@
     <ClCompile Include="Holder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TypeManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SharedObjects.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
     <ClCompile Include="BaseStarter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BaseServiceLink.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BaseProxy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -81,6 +75,15 @@
     <ClCompile Include="BaseRequestInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TypeTags.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ServiceMessageLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MessageTypeTags.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAppObject.h">
@@ -99,12 +102,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RaiiLambda.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TypeInfoObjs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TypeID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SharedObjects.h">
@@ -231,6 +228,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RequestDeltas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeTags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeTagDisp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageTypeTags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseMessageDispatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

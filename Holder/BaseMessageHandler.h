@@ -40,7 +40,8 @@ namespace holder::messages
 		ReceiverID GetReceiverID_() const { return m_myReceiverID; }
 
 		BaseMessageHandler(const std::shared_ptr<IMessageDispatcher>& pDispatcher,
-			std::shared_ptr<IMessageFilter> pFilter)
+			std::shared_ptr<IMessageFilter> pFilter =
+					std::shared_ptr<IMessageFilter>())
 			:m_pDispatcher(pDispatcher),
 			m_pFilter(std::move(pFilter))
 		{

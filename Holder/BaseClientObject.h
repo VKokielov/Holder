@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseServiceLink.h"
+#include "ServiceMessageLib.h"
 
 namespace holder::service
 {

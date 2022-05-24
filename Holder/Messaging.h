@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IAppObject.h"
+#include "TypeTags.h"
 
 #include <cinttypes>
 #include <memory>
@@ -14,7 +15,7 @@ namespace holder::messages
 	class IMessage : public base::IAppObject
 	{
 	public:
-
+		virtual const base::types::TypeTag& GetTag() const = 0;
 	};
 
 	class ISenderEndpoint : public base::IAppObject

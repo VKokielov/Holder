@@ -1,6 +1,5 @@
 #pragma once
 #include "IAppObjectFactory.h"
-#include "TypeID.h"
 
 #include <memory>
 #include <mutex>

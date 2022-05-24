@@ -160,7 +160,8 @@
     <ClCompile Include="BaseRequestInfo.cpp" />
     <ClCompile Include="BaseRequestIssuer.cpp" />
     <ClCompile Include="BaseServiceConfiguration.cpp" />
-    <ClCompile Include="BaseServiceLink.cpp" />
+    <ClCompile Include="MessageTypeTags.cpp" />
+    <ClCompile Include="ServiceMessageLib.cpp" />
     <ClCompile Include="BaseStarter.cpp" />
     <ClCompile Include="ConsoleTextService.cpp" />
     <ClCompile Include="ExecutionManager.cpp" />
@@ -174,18 +175,20 @@
     <ClCompile Include="StartupTaskManager.cpp" />
     <ClCompile Include="TestServiceAlpha.cpp" />
     <ClCompile Include="TestStarter.cpp" />
-    <ClCompile Include="TypeManager.cpp" />
+    <ClCompile Include="TypeTags.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppArgumentHelper.h" />
     <ClInclude Include="AppLibrary.h" />
     <ClInclude Include="BaseClientObject.h" />
+    <ClInclude Include="BaseMessageDispatch.h" />
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
     <ClInclude Include="BaseRequestInfo.h" />
     <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
+    <ClInclude Include="MessageTypeTags.h" />
     <ClInclude Include="RequestDeltas.h" />
     <ClInclude Include="ServiceMessageLib.h" />
     <ClInclude Include="BaseServiceObject.h" />
@@ -225,8 +228,8 @@
     <ClInclude Include="PathFromString.h" />
     <ClInclude Include="TestServiceAlpha.h" />
     <ClInclude Include="TestStarter.h" />
-    <ClInclude Include="TypeID.h" />
-    <ClInclude Include="TypeInfoObjs.h" />
+    <ClInclude Include="TypeTagDisp.h" />
+    <ClInclude Include="TypeTags.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

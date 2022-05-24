@@ -2,6 +2,8 @@
 
 #include "IAppObject.h"
 #include "Messaging.h"
+#include "IService.h"
+#include "IProxy.h"
 
 #include <cinttypes>
 #include <memory>
