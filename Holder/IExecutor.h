@@ -7,6 +7,8 @@ namespace holder::base
 {
 
 	// User-provided
+	using TimerUserID = uint32_t;
+	// For anonymous timers this is how the timer is identified
 	using TimerID = uint32_t;
 
 	enum class ExecutionState
@@ -31,7 +33,7 @@ namespace holder::base
 	class ITimerCallback : public IAppObject
 	{
 	public:
-		virtual void OnTimer(TimerID timerId) = 0;
+		virtual void OnTimer(TimerUserID timerUserId, TimerID timerID) = 0;
 	};
 
 }

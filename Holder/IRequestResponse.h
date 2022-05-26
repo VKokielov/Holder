@@ -82,6 +82,17 @@ namespace holder::reqresp
 	{
 	public:
 		virtual RequestID GetRequestID() const = 0;
+	};
+
+	class IRequestIncomingMessage : public messages::IMessage 
+	{
+	public:
 		virtual void Act(IRequestInfo& reqInfo) = 0;
+	};
+
+	class IRequestOutgoingMessage : public messages::IMessage
+	{
+	public:
+		virtual void Act(IRequestHandler& reqHandler) = 0;
 	};
 }

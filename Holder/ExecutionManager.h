@@ -58,7 +58,7 @@ namespace holder::base
 			std::string timerName;
 			typename std::chrono::steady_clock::duration timeInterval;
 			bool repeatingTimer;
-			TimerID timerID;
+			TimerUserID timerUserID;
 			std::shared_ptr<ITimerCallback> pCallback;
 		};
 
@@ -66,6 +66,7 @@ namespace holder::base
 		{
 			TimerInstructionTag tag;
 			TimerDefinition timerDef;
+			TimerID timerID;
 		};
 
 		class ExecutorThread 
@@ -210,10 +211,11 @@ namespace holder::base
 			void SetTimer(const char* pTimerName,
 				unsigned long microInterval,
 				bool repeatingTimer,
-				TimerID timerID,
+				TimerUserID timerUserID,
 				std::shared_ptr<ITimerCallback> pCallback);
 			
 			void CancelTimer(const char* pTimerName);
+			void CancelTimer(TimerID timerID);
 		private:
 			void ProcessTimerMessage(const TimerMessage& msg);
 
@@ -233,9 +235,9 @@ namespace holder::base
 
 			std::deque<TimerMessage> m_messages;
 
-			std::unordered_map<size_t, TimerStateWrapper> m_timerStates;
+			std::unordered_map<TimerID, TimerStateWrapper> m_timerStates;
 			std::priority_queue<TimerPriorityEntry> m_timerPriorities;
-			size_t m_nextTimerIndex{ 0 };
+			TimerID m_nextTimerIndex{ 0 };
 
 			// Atomic here
 			std::atomic<bool>  m_threadDoomed;
@@ -275,6 +277,7 @@ namespace holder::base
 			std::shared_ptr<ITimerCallback> pCallback);
 
 		void CancelTimer(const char* pTimerName);
+		void CancelTimer(TimerID timerID);
 
 	private:
 		ExecutionManager();

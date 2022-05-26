@@ -16,4 +16,8 @@ namespace holder::base::constants
 
 	types::TypeTag GetCreateProxyMessageTag();
 
+	types::TypeTag GetRequestOutgoingMessageTag();
+
+	types::TypeTag GetRequestIncomingMessageTag();
+
 }

@@ -32,3 +32,15 @@ types::TypeTag impl_ns::GetCreateProxyMessageTag()
 	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/CreateProxyMessage") };
 	return tag;
 }
+
+types::TypeTag impl_ns::GetRequestOutgoingMessageTag()
+{
+	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/RequestOutgoingMessage") };
+	return tag;
+}
+
+types::TypeTag impl_ns::GetRequestIncomingMessageTag()
+{
+	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/RequestIncomingMessage") };
+	return tag;
+}

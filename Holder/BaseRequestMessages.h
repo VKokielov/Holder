@@ -2,22 +2,46 @@
 
 #include "IProxy.h"
 #include "IRequestResponse.h"
+#include "MessageTypeTags.h"
 
 namespace holder::reqresp
 {
 
-
-	// Messages going TO request handler
-	class RequestOutgoingMessage : public service::IServiceMessage
+	class RequestMessage : public IRequestMessage
 	{
+	public:
+		RequestID GetRequestID() const override;
+
 	protected:
-		RequestOutgoingMessage(RequestID requestID)
+		RequestMessage(RequestID requestID)
 			:m_requestID(requestID)
 		{ }
 
-		RequestID GetRequestID() const { return m_requestID; }
 	private:
 		RequestID m_requestID;
+	};
+
+	// Messages going TO request handler
+	class RequestOutgoingMessage : public IRequestOutgoingMessage,
+		public RequestMessage
+	{
+	public:
+		base::types::TypeTag GetTag() const;
+	protected:
+		RequestOutgoingMessage(RequestID requestID)
+			:RequestMessage(requestID)
+		{ }
+	};
+
+	class RequestIncomingMessage : public IRequestIncomingMessage,
+		public RequestMessage
+	{
+	public:
+		base::types::TypeTag GetTag() const;
+	protected:
+		RequestIncomingMessage(RequestID requestID)
+			:RequestMessage(requestID)
+		{ }
 	};
 
 	// Issue request
@@ -31,14 +55,15 @@ namespace holder::reqresp
 			m_requestInitializer(std::move(requestInitializer))
 		{ }
 
-		void Act(service::IServiceLink& object) override
+		void Act(IRequestHandler& reqHandler) override
 		{
 			// Some kind of runtime dispatch needs to happen in this kind of multi-type
 			// handling.  Doing it this way may go against the old C++ grain, but
 			// it is far cleaner and more elegant than back-hack solutions which
-			// merely the dispatch explicit, without cutting it out
+			// merely render the dispatch explicit, without cutting it out
+
 			auto& rHandler
-				= dynamic_cast<ITypedRequestHandler<RequestInitializer>&>(object);
+				= dynamic_cast<ITypedRequestHandler<RequestInitializer>&>(reqHandler);
 			rHandler.CreateRequest(m_requestInitializer, GetRequestID());
 		}
 	private:
@@ -53,11 +78,9 @@ namespace holder::reqresp
 			:RequestOutgoingMessage(requestID)
 		{ }
 
-		void Act(service::IServiceLink& object) override
+		void Act(IRequestHandler& reqHandler) override
 		{
-			auto& rHandler
-				= dynamic_cast<IRequestHandler&>(object);
-			rHandler.CancelRequest(GetRequestID());
+			reqHandler.CancelRequest(GetRequestID());
 		}
 	};
 
@@ -66,10 +89,14 @@ namespace holder::reqresp
 	// Request state update.
 	// See standard deltas
 	template<typename RequestInfo, typename RequestDelta>
-	class RequestStateUpdate : public IRequestMessage
+	class RequestStateUpdate : public RequestIncomingMessage
 	{
 	public:
-		RequestID GetRequestID() const override { return m_requestID; }
+		RequestStateUpdate(RequestDelta&& requestDelta,
+			RequestID requestID)
+			:RequestIncomingMessage(requestID),
+			m_requestDelta(std::move(requestDelta))
+		{ }
 
 		void Act(IRequestInfo& reqInfo) override
 		{
@@ -77,7 +104,6 @@ namespace holder::reqresp
 		}
 
 	private:
-		RequestID m_requestID;
 		RequestDelta m_requestDelta;
 	};
 

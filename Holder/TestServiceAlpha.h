@@ -22,7 +22,7 @@ namespace holder::test
 				m_limit(limit)
 			{ }
 
-			void OnTimer(base::TimerID timerId) override;
+			void OnTimer(base::TimerUserID timerId, base::TimerID timerID) override;
 		private:
 			std::shared_ptr<stream::ITextServiceProxy> m_pTextProxy;
 			unsigned long m_counter{ 0 };

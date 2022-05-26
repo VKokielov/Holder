@@ -27,7 +27,7 @@ impl_ns::TestStarter::TestStarter(const holder::service::IStarterArgument& start
 
 	AddService(std::make_shared<service::BaseServiceConfiguration>("/root/services/TestServiceAlpha",
 		"/services/TestServiceAlpha",
-		"threadA", true));
+		"threadB", true));
 }
 
 	

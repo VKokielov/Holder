@@ -8,7 +8,7 @@ namespace holder::reqresp
 	
 	// Standard delta to set the state
 	template<RequestState targetState>
-	class RequestSetState
+	class RequestSetStateDelta
 	{
 	public:
 		void operator()(BaseRequestInfo& info)

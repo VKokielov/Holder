@@ -286,7 +286,7 @@ void impl_ns::ExecutionManager::TimerThread::JoinMe()
 void impl_ns::ExecutionManager::TimerThread::SetTimer(const char* pTimerName,
 	unsigned long microInterval,
 	bool repeatingTimer,
-	TimerID timerID,
+	TimerUserID timerUserID,
 	std::shared_ptr<ITimerCallback> pCallback)
 {
 	// Convert the duration from microseconds to the system specific steady clock
@@ -300,7 +300,7 @@ void impl_ns::ExecutionManager::TimerThread::SetTimer(const char* pTimerName,
 	timerMsg.timerDef.timerName = pTimerName;
 	timerMsg.timerDef.timeInterval = clockInterval;
 	timerMsg.timerDef.repeatingTimer = repeatingTimer;
-	timerMsg.timerDef.timerID = timerID;
+	timerMsg.timerDef.timerUserID = timerUserID;
 	timerMsg.timerDef.pCallback = std::move(pCallback);
 
 	std::unique_lock lk(m_mutexInstructions);
@@ -313,6 +313,18 @@ void impl_ns::ExecutionManager::TimerThread::CancelTimer(const char* pTimerName)
 	TimerMessage timerMsg;
 	timerMsg.tag = TimerInstructionTag::Cancel;
 	timerMsg.timerDef.timerName = pTimerName;
+
+	std::unique_lock lk(m_mutexInstructions);
+	m_messages.push_back(std::move(timerMsg));
+	m_cvInstructions.notify_one();
+}
+
+void impl_ns::ExecutionManager::TimerThread::CancelTimer(TimerID timerID)
+{
+	TimerMessage timerMsg;
+	timerMsg.tag = TimerInstructionTag::Cancel;
+	timerMsg.timerID = timerID;
+	timerMsg.timerDef.timerName.clear();
 
 	std::unique_lock lk(m_mutexInstructions);
 	m_messages.push_back(std::move(timerMsg));
@@ -377,17 +389,20 @@ void impl_ns::ExecutionManager::TimerThread::ProcessTimerMessage(const TimerMess
 	// Add or set a timer
 	if (msg.tag == TimerInstructionTag::Set)
 	{
-		// Find the timer with the given name
+		// Find the timer with the given name (if the name is not nullptr)
 		bool timerFound{ false };
-		for (auto& timerState : m_timerStates)
+		if (!msg.timerDef.timerName.empty())
 		{
-			if (timerState.second.timerDef.timerName == msg.timerDef.timerName)
+			for (auto& timerState : m_timerStates)
 			{
-				// Update
-				timerState.second.recalibrate = true;
-				timerState.second.timerDef = msg.timerDef;
-				timerFound = true;
-				break;
+				if (timerState.second.timerDef.timerName == msg.timerDef.timerName)
+				{
+					// Update
+					timerState.second.recalibrate = true;
+					timerState.second.timerDef = msg.timerDef;
+					timerFound = true;
+					break;
+				}
 			}
 		}
 
@@ -412,15 +427,23 @@ void impl_ns::ExecutionManager::TimerThread::ProcessTimerMessage(const TimerMess
 	{
 		// Cancel a timer
 		// Find it and remove it from the map
-		for (auto itTimer = m_timerStates.begin();
-			itTimer != m_timerStates.end();
-			++itTimer)
+
+		if (!msg.timerDef.timerName.empty())
 		{
-			if (itTimer->second.timerDef.timerName == msg.timerDef.timerName)
+			for (auto itTimer = m_timerStates.begin();
+				itTimer != m_timerStates.end();
+				++itTimer)
 			{
-				m_timerStates.erase(itTimer);
-				break;
+				if (itTimer->second.timerDef.timerName == msg.timerDef.timerName)
+				{
+					m_timerStates.erase(itTimer);
+					break;
+				}
 			}
+		}
+		else
+		{
+			m_timerStates.erase(msg.timerID);
 		}
 	}
 
@@ -440,7 +463,8 @@ impl_ns::ExecutionManager::TimerThread::TimerAction
 		return TimerAction::Remove;
 	}
 
-	itTimer->second.timerDef.pCallback->OnTimer(itTimer->second.timerDef.timerID);
+	itTimer->second.timerDef.pCallback->OnTimer(itTimer->second.timerDef.timerUserID,
+												timerEntry.timerIndex);
 
 	if (!itTimer->second.recalibrate
 		&& !itTimer->second.timerDef.repeatingTimer)
@@ -623,7 +647,7 @@ bool impl_ns::ExecutionManager::SignalExecutor(ExecutorID executorId, ExecutorSi
 bool impl_ns::ExecutionManager::SetTimer(const char* pTimerName,
 	unsigned long microInterval,
 	bool repeatingTimer,
-	TimerID timerID,
+	TimerUserID timerUserID,
 	std::shared_ptr<ITimerCallback> pCallback)
 {
 	if (!pCallback)
@@ -631,14 +655,25 @@ bool impl_ns::ExecutionManager::SetTimer(const char* pTimerName,
 		return false;
 	}
 
-	m_pTimerThread->SetTimer(pTimerName, microInterval, repeatingTimer, timerID,
+	m_pTimerThread->SetTimer(pTimerName ? pTimerName : "", 
+		microInterval, 
+		repeatingTimer, 
+		timerUserID,
 		std::move(pCallback));
 	return true;
 }
 
 void impl_ns::ExecutionManager::CancelTimer(const char* pTimerName)
 {
-	m_pTimerThread->CancelTimer(pTimerName);
+	if (pTimerName && *pTimerName)
+	{
+		m_pTimerThread->CancelTimer(pTimerName);
+	}
+}
+
+void impl_ns::ExecutionManager::CancelTimer(TimerID timerID)
+{
+	m_pTimerThread->CancelTimer(timerID);
 }
 
 void impl_ns::ExecutionManager::RemoveExecutors(const std::vector<ExecutorID>& toRemove)

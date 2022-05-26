@@ -44,12 +44,12 @@ namespace holder::base::types
 			Object& obj, 
 			Args&& ... args)
 		{
-			/*
+			
 			if (!pThis)
 			{
 				return false;
 			}
-
+			
 			auto itObj = m_dispatchTable.find(tag);
 			if (itObj == m_dispatchTable.end())
 			{
@@ -57,9 +57,9 @@ namespace holder::base::types
 			}
 
 			DispMember callPtr = itObj->second;
-
-			pThis->*(callPtr)(obj, std::forward<Args>(args)...);
-			*/
+			
+			(pThis->*callPtr)(obj, std::forward<Args>(args)...);
+			
 			return true;
 		}
 

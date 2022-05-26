@@ -159,6 +159,7 @@
     <ClCompile Include="BaseProxy.cpp" />
     <ClCompile Include="BaseRequestInfo.cpp" />
     <ClCompile Include="BaseRequestIssuer.cpp" />
+    <ClCompile Include="BaseRequestMessages.cpp" />
     <ClCompile Include="BaseServiceConfiguration.cpp" />
     <ClCompile Include="MessageTypeTags.cpp" />
     <ClCompile Include="ServiceMessageLib.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
+    <ClInclude Include="MessageLib.h" />
     <ClInclude Include="MessageTypeTags.h" />
     <ClInclude Include="RequestDeltas.h" />
     <ClInclude Include="ServiceMessageLib.h" />
@@ -228,6 +230,7 @@
     <ClInclude Include="PathFromString.h" />
     <ClInclude Include="TestServiceAlpha.h" />
     <ClInclude Include="TestStarter.h" />
+    <ClInclude Include="TimedMessageSender.h" />
     <ClInclude Include="TypeTagDisp.h" />
     <ClInclude Include="TypeTags.h" />
   </ItemGroup>
