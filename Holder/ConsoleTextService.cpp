@@ -1,6 +1,7 @@
 #include "ConsoleTextService.h"
 
 #include "RegistrationHelperAliases.h"
+#include "MessageLib.h"
 
 #include <iostream>
 
@@ -38,7 +39,7 @@ void impl_ns::ConsoleTextProxy::OnMessage(const std::shared_ptr<holder::messages
 
 void impl_ns::ConsoleTextProxy::OutputString(const char* pString)
 {
-	service::SendMessage<ConsoleTextService::ConsoleTextMessage>(BaseProxy::CntPart(), pString);
+	messages::SendMessage<ConsoleTextService::ConsoleTextMessage>(BaseProxy::CntPart(), pString);
 }
 
 // ConsoleTextService

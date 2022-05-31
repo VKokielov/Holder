@@ -7,9 +7,6 @@
 namespace holder::service
 {
 
-	class ServiceLinkSendException 
-	{ };
-
 	class ServiceMessageFilter : public messages::IMessageFilter
 	{
 		bool CanSendMessage(const messages::IMessage& msg) override;

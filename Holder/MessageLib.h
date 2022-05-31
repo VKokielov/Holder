@@ -4,6 +4,8 @@
 
 namespace holder::messages
 {
+	class SendException { };
+
 	template<typename Msg, typename ... Args>
 	void SendMessage(const std::shared_ptr<messages::ISenderEndpoint>& pCounterpart,
 		Args&& ... args)
@@ -13,7 +15,7 @@ namespace holder::messages
 
 		if (!pCounterpart->SendMessage(pMsg))
 		{
-			throw ServiceLinkSendException();
+			throw SendException();
 		}
 	}
 }

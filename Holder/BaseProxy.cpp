@@ -1,4 +1,5 @@
 #include "BaseProxy.h"
+#include "MessageLib.h"
 
 namespace impl_ns = holder::service;
 namespace messages = holder::messages;
@@ -26,6 +27,6 @@ holder::messages::ReceiverID impl_ns::BaseProxy::GetReceiverID() const
 impl_ns::BaseProxy::~BaseProxy()
 {
 	// Send a "destroy" message for this client
-	SendMessage < DestroyClientMessage>(m_pCounterpart);
+	messages::SendMessage < DestroyClientMessage>(m_pCounterpart);
 }
 

@@ -118,6 +118,17 @@ namespace holder::service
 		virtual std::shared_ptr<IMessageListener>
 			GetMyListenerSharedPtr() = 0;
 
+		// Client created callback
+		virtual void OnCreateClient(messages::DispatchID clientID,
+									messages::ReceiverID clientReceiverID,
+									const std::shared_ptr<messages::ISenderEndpoint>&
+										pRemoteEndpoint)
+		{ }
+
+		// Client destroyed callback
+		virtual void OnDestroyClient(messages::DispatchID clientID)
+		{ }
+
 		void SetDispatcher(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
 		{
 			// Create a default receiver and endpoint
@@ -204,6 +215,8 @@ namespace holder::service
 					receiverID,
 					pProxyEndpoint));
 
+			OnCreateClient(clientID, receiverID, pProxyEndpoint);
+
 			return pServiceLink;
 		}
 		void RemoveClient(messages::DispatchID clientID)
@@ -229,6 +242,9 @@ namespace holder::service
 
 			// Remove the client
 			m_clientMap.erase(itClient);
+
+			// Callback
+			OnDestroyClient(clientID);
 		}
 
 		friend class CreateProxyMessage;

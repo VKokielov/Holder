@@ -27,7 +27,8 @@ void impl_ns::TestServiceAlpha::OnCreated()
 	ServiceBase::OnDependenciesAdded();
 }
 
-void impl_ns::TestServiceAlpha::TextSender::OnTimer(holder::base::TimerID timerId)
+void impl_ns::TestServiceAlpha::TextSender::OnTimer(holder::base::TimerUserID timerUserId,
+	holder::base::TimerID timerID)
 {
 	std::stringstream ssm;
 	ssm << "Counter value: " << m_counter << '\n';

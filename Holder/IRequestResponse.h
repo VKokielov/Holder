@@ -46,10 +46,10 @@ namespace holder::reqresp
 		virtual bool PurgeRequest(RequestID requestID) = 0;
 	};
 
-	class IRequestHandler : public virtual service::IServiceLink
+	class IRequestHandler
 	{
 	public:
-		virtual bool CancelRequest(RequestID requestID) = 0;
+		virtual void CancelRequest(RequestID requestID, messages::DispatchID dispatchID) = 0;
 	};
 	
 	template<typename RequestInitializer>
@@ -57,7 +57,7 @@ namespace holder::reqresp
 	{
 	public:
 		virtual bool CreateRequest(const RequestInitializer& requestInitializer,
-			RequestID requestID) = 0;
+			RequestID requestID, messages::DispatchID clientID) = 0;
 	};
 
 	class IRequestListener : public base::IAppObject
@@ -93,6 +93,6 @@ namespace holder::reqresp
 	class IRequestOutgoingMessage : public messages::IMessage
 	{
 	public:
-		virtual void Act(IRequestHandler& reqHandler) = 0;
+		virtual void Act(IRequestHandler& reqHandler, messages::DispatchID clientID) = 0;
 	};
 }

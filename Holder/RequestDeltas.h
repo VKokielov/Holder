@@ -11,9 +11,9 @@ namespace holder::reqresp
 	class RequestSetStateDelta
 	{
 	public:
-		void operator()(BaseRequestInfo& info)
+		void operator()(IRequestInfo& info)
 		{
-			info.SetState(targetState);
+			static_cast<BaseRequestInfo&>(info).SetState(targetState);
 		}
 	};
 

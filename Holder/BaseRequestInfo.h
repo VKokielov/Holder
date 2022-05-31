@@ -19,10 +19,23 @@ namespace holder::reqresp
 		RequestState GetRequestStateNP() const { return m_requestState; }
 		RequestID GetRequestIDNP() const { return m_requestID; }
 
+		static bool IsCancelState(RequestState requestState)
+		{
+			return requestState == RequestState::CancelAcknowledged
+				|| requestState == RequestState::CanceledTimeout
+				|| requestState == RequestState::CanceledUser;
+		}
+
+		static bool IsCancelableState(RequestState requestState)
+		{
+			return requestState == RequestState::Issued;
+		}
+
 		bool CanBeCanceled() const
 		{
-			return m_requestState == RequestState::Issued;
+			return IsCancelableState(m_requestState);
 		}
+
 	protected:
 		BaseRequestInfo(const std::shared_ptr<IRequestListener> pListener,
 			RequestID requestID,

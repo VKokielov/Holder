@@ -157,6 +157,7 @@
     <ClCompile Include="BaseClientObject.cpp" />
     <ClCompile Include="BaseMessageHandler.cpp" />
     <ClCompile Include="BaseProxy.cpp" />
+    <ClCompile Include="BaseRequestHandler.cpp" />
     <ClCompile Include="BaseRequestInfo.cpp" />
     <ClCompile Include="BaseRequestIssuer.cpp" />
     <ClCompile Include="BaseRequestMessages.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="BaseMessageDispatch.h" />
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
+    <ClInclude Include="BaseRequestHandler.h" />
     <ClInclude Include="BaseRequestInfo.h" />
     <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
