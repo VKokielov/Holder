@@ -7,10 +7,17 @@
 namespace holder::reqresp
 {
 
-	class RequestMessage : public IRequestMessage
+	template<typename BaseInterface>
+	class RequestMessage : public BaseInterface
 	{
 	public:
-		RequestID GetRequestID() const override;
+		static_assert(std::is_base_of_v<IRequestMessage, BaseInterface>,
+			"Request messages must derive from IRequestMessage");
+
+		RequestID GetRequestID() const override
+		{
+			return m_requestID;
+		}
 
 	protected:
 		RequestMessage(RequestID requestID)
@@ -22,8 +29,7 @@ namespace holder::reqresp
 	};
 
 	// Messages going TO request handler
-	class RequestOutgoingMessage : public IRequestOutgoingMessage,
-		public RequestMessage
+	class RequestOutgoingMessage :  public RequestMessage<IRequestOutgoingMessage>
 	{
 	public:
 		base::types::TypeTag GetTag() const;
@@ -33,8 +39,7 @@ namespace holder::reqresp
 		{ }
 	};
 
-	class RequestIncomingMessage : public IRequestIncomingMessage,
-		public RequestMessage
+	class RequestIncomingMessage : public RequestMessage<IRequestIncomingMessage>
 	{
 	public:
 		base::types::TypeTag GetTag() const;

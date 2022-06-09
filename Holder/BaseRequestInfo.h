@@ -9,8 +9,51 @@ namespace holder::reqresp
 	class BaseRequestInfo : public IRequestInfo
 	{
 	public:
-		void SetState(RequestState newState);
-		void SetResult(std::shared_ptr<base::IAppObject> pResult);
+		class Updater
+		{
+		public:
+			void SetNewState(RequestState reqState)
+			{
+				m_isValid.reset();
+				m_newState.emplace(reqState);
+			}
+			void ClearNewState()
+			{
+				m_isValid.reset();
+				m_newState.reset();
+			}
+			void SetResult(std::shared_ptr<base::IAppObject> pResult)
+			{
+				m_isValid.reset();
+				m_reqResult.emplace(std::move(pResult));
+			}
+
+			bool IsValid() const;
+
+			// Apply
+			void operator ()();
+		private:
+			Updater(BaseRequestInfo& target)
+				:m_target(target)
+			{ }
+
+			BaseRequestInfo& m_target;
+
+			// The sequence number tells us whether the states have changed
+			// between updates
+			mutable std::optional<bool> m_isValid;
+			mutable unsigned long m_seqValidated;
+
+			std::optional<RequestState> m_newState;
+			std::optional<std::shared_ptr<base::IAppObject> > m_reqResult;
+
+			friend class BaseRequestInfo;			
+		};
+
+		Updater GetUpdater()
+		{
+			return Updater(*this);
+		}
 
 		// Inform the listener, if there is one, that the request is being purged
 		~BaseRequestInfo();
@@ -28,7 +71,8 @@ namespace holder::reqresp
 
 		static bool IsCancelableState(RequestState requestState)
 		{
-			return requestState == RequestState::Issued;
+			return requestState == RequestState::Issued
+				|| IsCancelState(requestState);
 		}
 
 		bool CanBeCanceled() const
@@ -54,5 +98,8 @@ namespace holder::reqresp
 		ResponseID m_responseID;
 
 		RequestState m_requestState{ RequestState::Issued };
+
+		// For updaters
+		unsigned int m_sequence{ 0 };
 	};
 }

@@ -23,7 +23,7 @@ namespace holder::reqresp
 
 	struct BaseHandlerRIInitializer
 	{
-		BaseRequestHandler* pOwner;
+		std::weak_ptr<BaseRequestHandler> pOwner;
 		HandlerRequestInfoID requestInfoID;
 		messages::DispatchID clientID;
 		RequestID requestID;
@@ -33,12 +33,12 @@ namespace holder::reqresp
 	class BaseHandlerRequestInfo
 	{
 	public:
+		~BaseHandlerRequestInfo();
+
 		// The public interface is to be used by the class deriving from the request handler
 		void CompleteRequest(bool success,
 							std::shared_ptr<base::IAppObject> pResult);
 		
-		void Purge();
-
 		template<typename RequestDelta>
 		bool SendRequestUpdate(RequestDelta&& delta)
 		{
@@ -61,31 +61,29 @@ namespace holder::reqresp
 		bool IsActive() const { return m_reqState == HandlerRequestState::Active; }
 
 		HandlerRequestInfoID GetRequestInfoID() const { return m_requestInfoID; }
+		messages::DispatchID GetClientID() const { return m_clientID; }
+		RequestID GetRequestID() const { return m_requestID; }
+
 	protected:
 		
-		BaseHandlerRequestInfo(const BaseHandlerRIInitializer& bhInitializer,
-			bool autoPurge)
-			:m_owner(*bhInitializer.pOwner),
+		BaseHandlerRequestInfo(const BaseHandlerRIInitializer& bhInitializer)
+			:m_owner(bhInitializer.pOwner),
 			m_requestInfoID(bhInitializer.requestInfoID),
 			m_clientID(bhInitializer.clientID),
-			m_requestID(bhInitializer.requestID),
-			m_autoPurge(autoPurge)
+			m_requestID(bhInitializer.requestID)
 		{ }
 
 		virtual void OnRequestCancelled();
 		virtual void OnRequestComplete(bool success,
 			const std::shared_ptr<base::IAppObject>& requestResult);
+		// Request is being orphaned - the handler no longer owns it
+		virtual void OnRequestOrphaned();
 
 	private:
-		void CancelRequest();
-		void SetCompletion(bool success,
-			std::shared_ptr<base::IAppObject>& requestResult);
+		void SetCancel();
 
 		// Arguments
-		// Purge on completion?
-
-		BaseRequestHandler& m_owner;
-		bool m_autoPurge{ false };
+		std::weak_ptr<BaseRequestHandler> m_owner;
 
 		// Coordinates
 		HandlerRequestInfoID m_requestInfoID;
@@ -122,6 +120,8 @@ namespace holder::reqresp
 
 			bool HasRequestID(RequestID requestID) const;
 
+			HandlerRequestInfoID GetRequestInfoID(RequestID requestID) const;
+
 			const std::shared_ptr<messages::ISenderEndpoint>
 				GetRemoteEndpoint()
 			{
@@ -151,14 +151,6 @@ namespace holder::reqresp
 					}
 				}
 			}
-
-			template<typename Msg, typename...Args>
-			void SendRequestMessage(RequestID requestID, Args&&...args)
-			{
-				messages::SendMessage<Msg>(m_pRemoteEndpoint, 
-					requestID,
-					std::forward<Args>(args)...);
-			}
 		private:
 			std::unordered_map<RequestID,
 				HandlerRequestInfoID> m_requestMap;
@@ -168,16 +160,23 @@ namespace holder::reqresp
 		};
 
 	public:
-
-		void CancelRequest(RequestID requestID, messages::DispatchID clientID);
-
-
+		void CancelRequest(RequestID requestID, messages::DispatchID clientID) override;
 	protected:
 
-		void AddClient(messages::DispatchID clientID);
-		void RemoveClient(messages::DispatchID clientID);
+		virtual std::shared_ptr<BaseRequestHandler>
+			GetMyBaseRequestHandlerSharedPtr() = 0;
 
-		void PurgeRequest(HandlerRequestInfoID requestInfoID);
+		template<typename TagDispatch>
+		static void InitializeTagDispatch(const messages::IMessage*,
+			TagDispatch& tagDispatchTable)
+		{
+			tagDispatchTable.AddDispatch(base::constants::GetRequestOutgoingMessageTag(),
+				&BaseRequestHandler::OnRequestOutgoingMessage);
+		}
+
+		void AddClient(messages::DispatchID clientID,
+			std::shared_ptr<messages::ISenderEndpoint> pRemoteEndpoint);
+		void RemoveClient(messages::DispatchID clientID);
 
 		template<typename HandlerRequestInfoType,
 				 typename ... Args>
@@ -188,82 +187,89 @@ namespace holder::reqresp
 		{
 			static_assert(std::is_base_of_v<BaseHandlerRequestInfo, HandlerRequestInfoType>,
 				"Your HandlerRequestInfo class must derive from BaseHandlerRequestInfo");
-			std::shared_ptr<HandlerRequestInfoType> pRet{};
+			HandlerRequestInfoID reqID{ 0 };
 
 			// Make it harder to hack
 			if (m_freeID == 0) 
 			{
-				return pRet;
+				return reqID;
 			}
 
+			// Find the client
 			auto itClient = m_requestClients.find(clientID);
-
 			if (itClient == m_requestClients.end())
 			{
-				return pRet;
+				return reqID;
 			}
 
-			// A client was found.  Now check that the requestID is NOT already
-			// in the map.  If it is, send a fail message.  This is needed for completeness.
-			// We can assume nothing about the code on the other side.
+			HandlerRequestInfoID internalID = m_freeID++;
 
-			// The create failure message will, for the client, refer to an existing
-			// request ID.  Since the request IDs are picked by the client, this should
-			// never happen unless there is a bug in the client code
+			// Client found.  Create the request
+			BaseHandlerRIInitializer reqInitializer;
+			reqInitializer.clientID = clientID;
+			reqInitializer.requestID = requestID;
+			reqInitializer.requestInfoID = internalID;
+			reqInitializer.pOwner = GetMyBaseRequestHandlerSharedPtr();
+			reqInitializer.pRemoteEndpoint = itClient->second.GetRemoteEndpoint();
 
-			if (itClient->second.HasRequestID(requestID))
-			{
-				itClient->second.SendCreateFailure(requestID);
-				return pRet;
-			}
-
-			// Create the request object and add it to our data structure
-			pRet = std::make_shared<HandlerRequestInfoType>(requestID, clientID,
+			auto pRequest = std::make_shared<HandlerRequestInfoType>(reqInitializer,
 				std::forward<Args>(args)...);
 
-			itClient->second.AddRequest(pRet);
-			return pRet;
+			itClient->second.AddRequest(requestID, internalID);
+			m_requestInfos.emplace(internalID, pRequest);
+
+			return internalID;
 		}
-		
-		void IterateIncompleteRequests();
 
-		// This function is called when m_notifyHangingRequests is true
-		// and a client goes out of commission, or when IterateIncompleteRequests()
-		// above is called.
-
-		virtual void OnIncompleteRequest(const BaseHandlerRequestInfo& request);
+		template<typename F>
+		void IterateAllRequests(F&& callback)
+		{
+			for (auto& requestPair : m_requestInfos)
+			{
+				callback(requestPair.first, requestPair.second.get());
+			}
+		}
 
 	private:
+
 		void OnRequestOutgoingMessage(messages::IMessage& msg,
 			messages::DispatchID clientID);
 
-		HandlerRequestInfoID GetRequestInfoID(messages::DispatchID,
-			RequestID requestID) const;
-
 		BaseHandlerRequestInfo* GetRequestInfo(HandlerRequestInfoID requestInfoID);
+
+		HandlerRequestInfoID GetRequestInfoID(messages::DispatchID clientID,
+			RequestID requestID) const
+		{
+			auto itClient = m_requestClients.find(clientID);
+			if (itClient == m_requestClients.end())
+			{
+				return 0;
+			}
+
+			return itClient->second.GetRequestInfoID(requestID);
+		}
 
 		BaseHandlerRequestInfo* GetRequestFromCoords(messages::DispatchID clientID,
 			RequestID requestID)
 		{
-			// This function returns 0 if the request info ID was not found; but
+			// The function in the call below returns 0 if the request info ID was not found; but
 			// IDs start at 1.
-
 			auto requestInfoID = GetRequestInfoID(clientID, requestID);
 			return GetRequestInfo(requestInfoID);
 		}
 
-		void IterateClientRequests(ClientInfo& client,
-			bool purgeRequests, 
-			bool raiseIncomplete);
 
-		// Arguments
-		bool m_notifyHangingRequests{ false };
+
+		void PurgeRequest(HandlerRequestInfoID requestInfoID);
+		void PurgeRequests(ClientInfo& client);
 
 		// Two ways to look up request information: clientID/requestID, or
 		// request handler ID
 		std::unordered_map<messages::DispatchID, ClientInfo> m_requestClients;
-		std::unordered_map<HandlerRequestInfoID, std::unique_ptr<BaseHandlerRequestInfo> > m_requestHandlers;
+		std::unordered_map<HandlerRequestInfoID, std::shared_ptr<BaseHandlerRequestInfo> > m_requestInfos;
 		HandlerRequestInfoID m_freeID{ 1 };
+
+		friend class BaseHandlerRequestInfo;
 	};
 
 }

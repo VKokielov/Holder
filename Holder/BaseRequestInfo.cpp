@@ -2,26 +2,75 @@
 
 namespace impl_ns = holder::reqresp;
 
-void impl_ns::BaseRequestInfo::SetState(impl_ns::RequestState newState)
+bool impl_ns::BaseRequestInfo::Updater::IsValid() const
 {
-	if (newState == m_requestState)
+	if (m_isValid.has_value() 
+		&& m_seqValidated == m_target.m_sequence)
+	{
+		return *m_isValid;
+	}
+
+	m_seqValidated = m_target.m_sequence;
+
+	RequestState stateToBe = m_newState.has_value() ? m_newState.value()
+		: m_target.m_requestState;
+
+	bool hasResult = m_reqResult.has_value() ? (bool)m_reqResult.value()
+		: (bool)m_target.m_pResult;
+
+	if (stateToBe != RequestState::Completed
+		&& stateToBe != RequestState::Failed
+		&& hasResult)
+	{
+		m_isValid.emplace(false);
+		return false;
+	}
+
+	if (IsCancelState(stateToBe) && !IsCancelableState(m_target.m_requestState))
+	{
+		m_isValid.emplace(false);
+		return false;
+	}
+
+	m_isValid.emplace(true);
+	return true;
+}
+
+void impl_ns::BaseRequestInfo::Updater::operator ()()
+{
+	if (!IsValid())
 	{
 		return;
 	}
 
-	// Cancels for requests in Completed state are ignored
-	if (!CanBeCanceled() && IsCancelState(newState))
+	// Is there an actual change?
+	bool hadChange{ false };
+
+	RequestState oldState;
+	if (m_newState.has_value())
 	{
-		return;
+		hadChange = m_newState.value() != m_target.m_requestState;
+		oldState = m_target.m_requestState;
+		m_target.m_requestState = m_newState.value();
 	}
 
-	if (m_pListener)
+	if (m_reqResult.has_value())
 	{
-		m_pListener->OnRequestStateChange(m_requestID, m_responseID,
-			m_requestState, newState);
+		hadChange = hadChange || m_reqResult.value().get() != m_target.m_pResult.get();
+		m_target.m_pResult = m_reqResult.value();
 	}
 
-	m_requestState = newState;
+	if (hadChange)
+	{
+		++m_target.m_sequence;
+
+		if (m_target.m_pListener)
+		{
+			m_target.m_pListener->OnRequestStateChange(m_target.m_requestID, 
+				m_target.m_responseID,
+				oldState, m_target.m_requestState);
+		}
+	}
 }
 
 impl_ns::BaseRequestInfo::~BaseRequestInfo()
@@ -30,9 +79,4 @@ impl_ns::BaseRequestInfo::~BaseRequestInfo()
 	{
 		m_pListener->OnRequestPurged(m_requestID, m_responseID);
 	}
-}
-
-void impl_ns::BaseRequestInfo::SetResult(std::shared_ptr<holder::base::IAppObject> pResult)
-{
-	m_pResult = pResult;
 }
