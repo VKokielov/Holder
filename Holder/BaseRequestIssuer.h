@@ -38,8 +38,7 @@ namespace holder::reqresp
 				// Send a message to the request issuer signifying that the request timed out
 				// NOTE:  If the request is in completed or failed state after the timeout, the 
 				// cancel timeout setter is ignored.
-				messages::SendMessage < RequestStateUpdate<BaseRequestInfo,
-					DeltaSetCancel> > (m_pEndpoint, DeltaSetCancel(), m_requestID);
+				messages::SendMessage < RequestStateUpdate<DeltaSetCancel> > (m_pEndpoint, DeltaSetCancel(), m_requestID);
 			}
 
 		private:

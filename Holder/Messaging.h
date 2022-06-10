@@ -12,6 +12,7 @@ namespace holder::messages
 	using DispatchID = uint32_t;
 	using ReceiverID = uint32_t;
 
+
 	class IMessage : public base::IAppObject
 	{
 	public:

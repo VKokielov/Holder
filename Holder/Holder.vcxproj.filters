@@ -257,5 +257,11 @@
     <ClInclude Include="BaseRequestHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FlatPropertyTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IConnectionHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

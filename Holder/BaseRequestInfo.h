@@ -92,7 +92,7 @@ namespace holder::reqresp
 		}
 
 	private:
-		std::shared_ptr<IRequestListener> m_pListener;
+		std::weak_ptr<IRequestListener> m_pListener;
 		std::shared_ptr<base::IAppObject> m_pResult;
 		RequestID m_requestID;
 		ResponseID m_responseID;

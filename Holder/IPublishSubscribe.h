@@ -24,8 +24,6 @@ namespace holder::pubsub
 	class IPublisher : public virtual base::IAppObject
 	{
 	public:
-		virtual ServiceSubscriptionID Subscribe(const std::shared_ptr<ISubscriber>& pListener,
-			const SubscriptionDetails& subDetails) = 0;
 		virtual void Unsubscribe(ServiceSubscriptionID subID) = 0;
 	};
 }

@@ -63,10 +63,14 @@ namespace holder::reqresp
 	class IRequestListener : public base::IAppObject
 	{
 	public:
-		virtual void OnRequestStateChange(RequestID reqId,
+		virtual void OnRequestCanceled(RequestID reqId,
+			ResponseID respId) = 0;
+		virtual void OnRequestFailed(RequestID reqId,
+			ResponseID respId) = 0;
+		virtual void OnRequestCompleted(RequestID reqId,
 			ResponseID respId,
-			RequestState oldState,
-			RequestState newState) = 0;
+			const std::shared_ptr<base::IAppObject>& pResult) = 0;
+
 		virtual void OnRequestPurged(RequestID reqId, ResponseID respId) = 0;
 	};
 

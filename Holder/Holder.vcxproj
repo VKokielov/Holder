@@ -191,6 +191,8 @@
     <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
+    <ClInclude Include="FlatPropertyTable.h" />
+    <ClInclude Include="IConnectionHandler.h" />
     <ClInclude Include="MessageLib.h" />
     <ClInclude Include="MessageTypeTags.h" />
     <ClInclude Include="RequestDeltas.h" />

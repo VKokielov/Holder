@@ -18,22 +18,27 @@ bool impl_ns::BaseRequestInfo::Updater::IsValid() const
 	bool hasResult = m_reqResult.has_value() ? (bool)m_reqResult.value()
 		: (bool)m_target.m_pResult;
 
-	if (stateToBe != RequestState::Completed
-		&& stateToBe != RequestState::Failed
-		&& hasResult)
+	bool isValid{ false };
+	if (stateToBe == RequestState::Issued)
 	{
-		m_isValid.emplace(false);
-		return false;
+		isValid = false;
+	}
+	else if (stateToBe == RequestState::Completed || stateToBe == RequestState::Failed)
+	{
+		isValid = hasResult && m_target.m_requestState == RequestState::Issued);
+	}
+	else if (stateToBe == RequestState::CanceledTimeout || stateToBe == RequestState::CanceledUser)
+	{
+		isValid = m_target.m_requestState == RequestState::Issued;
+	}
+	else if (stateToBe == RequestState::CancelAcknowledged)
+	{
+		isValid = m_target.m_requestState == RequestState::CanceledTimeout
+			|| m_target.m_requestState == RequestState::CanceledUser;
 	}
 
-	if (IsCancelState(stateToBe) && !IsCancelableState(m_target.m_requestState))
-	{
-		m_isValid.emplace(false);
-		return false;
-	}
-
-	m_isValid.emplace(true);
-	return true;
+	m_isValid.emplace(isValid);
+	return isValid;
 }
 
 void impl_ns::BaseRequestInfo::Updater::operator ()()
@@ -64,19 +69,37 @@ void impl_ns::BaseRequestInfo::Updater::operator ()()
 	{
 		++m_target.m_sequence;
 
-		if (m_target.m_pListener)
+		auto pTargetListener = m_target.m_pListener.lock();
+
+		if (pTargetListener)
 		{
-			m_target.m_pListener->OnRequestStateChange(m_target.m_requestID, 
-				m_target.m_responseID,
-				oldState, m_target.m_requestState);
+			if (m_newState.has_value())
+			{
+				auto newState = m_newState.value();
+				if (newState == RequestState::Completed)
+				{
+					pTargetListener->OnRequestCompleted(m_target.m_requestID,
+						m_target.m_responseID, m_target.m_pResult);
+				}
+				else if (newState == RequestState::Failed)
+				{
+					pTargetListener->OnRequestFailed(m_target.m_requestID, m_target.m_responseID);
+				}
+				else if (newState == RequestState::CancelAcknowledged)
+				{
+					pTargetListener->OnRequestCanceled(m_target.m_requestID,
+						m_target.m_responseID);
+				}
+			}
 		}
 	}
 }
 
 impl_ns::BaseRequestInfo::~BaseRequestInfo()
 {
-	if (m_pListener)
+	auto pListener = m_pListener.lock();
+	if (pListener)
 	{
-		m_pListener->OnRequestPurged(m_requestID, m_responseID);
+		pListener->OnRequestPurged(m_requestID, m_responseID);
 	}
 }
