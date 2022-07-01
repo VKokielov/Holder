@@ -206,8 +206,6 @@ namespace holder::reqresp
 		std::weak_ptr<messages::ISenderEndpoint> m_pLocalEndpoint;
 		std::unordered_map<RequestID, RequestInfo> m_requestMap;
 		RequestID m_nextRequestID{ 0 };
-
-		unsigned long m_timeoutID{ 0 };
 	};
 
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -161,8 +161,10 @@
     <ClCompile Include="BaseRequestInfo.cpp" />
     <ClCompile Include="BaseRequestIssuer.cpp" />
     <ClCompile Include="BaseRequestMessages.cpp" />
+    <ClCompile Include="BaseServiceCommClient.cpp" />
     <ClCompile Include="BaseServiceConfiguration.cpp" />
     <ClCompile Include="MessageTypeTags.cpp" />
+    <ClCompile Include="ServiceCommMessages.cpp" />
     <ClCompile Include="ServiceMessageLib.cpp" />
     <ClCompile Include="BaseStarter.cpp" />
     <ClCompile Include="ConsoleTextService.cpp" />
@@ -186,16 +188,22 @@
     <ClInclude Include="BaseMessageDispatch.h" />
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
+    <ClInclude Include="BasePublisher.h" />
     <ClInclude Include="BaseRequestHandler.h" />
     <ClInclude Include="BaseRequestInfo.h" />
     <ClInclude Include="BaseRequestIssuer.h" />
     <ClInclude Include="BaseService.h" />
+    <ClInclude Include="BaseServiceCommClient.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
+    <ClInclude Include="BaseSubscriber.h" />
     <ClInclude Include="FlatPropertyTable.h" />
     <ClInclude Include="IConnectionHandler.h" />
+    <ClInclude Include="IServiceComm.h" />
     <ClInclude Include="MessageLib.h" />
     <ClInclude Include="MessageTypeTags.h" />
+    <ClInclude Include="NetworkDatatypes.h" />
     <ClInclude Include="RequestDeltas.h" />
+    <ClInclude Include="ServiceCommMessages.h" />
     <ClInclude Include="ServiceMessageLib.h" />
     <ClInclude Include="BaseServiceObject.h" />
     <ClInclude Include="BaseStarter.h" />

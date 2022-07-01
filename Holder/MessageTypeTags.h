@@ -20,4 +20,8 @@ namespace holder::base::constants
 
 	types::TypeTag GetRequestIncomingMessageTag();
 
+	types::TypeTag GetSCommClientMessageTag();
+
+	types::TypeTag GetSCommServiceMessageTag();
+
 }

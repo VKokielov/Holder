@@ -6,37 +6,14 @@
 #include "IPublishSubscribe.h"
 #include "IConnectionHandler.h"
 #include "FlatPropertyTable.h"
+#include "NetworkDatatypes.h"
 
 #include <cinttypes>
 #include <string>
 
 namespace holder::network
 {
-	enum class ConnectionInterest
-	{
-		Interested,
-		NotInterested
-	};
 
-	enum class ConnectionType
-	{
-		Active,
-		Listening
-	};
-
-	enum class ConnectionCommand
-	{
-		Connect,
-		Listen,
-		Close
-	};
-
-	enum class ConnectionState
-	{
-		Idle,
-		Active,
-		Closed
-	};
 
 	constexpr ConnPropertyIDType CONN_ADDRESS = 0;
 	constexpr ConnPropertyIDType CONN_SERVICE = 1;
@@ -68,36 +45,30 @@ namespace holder::network
 	class INetworkListener : public base::IAppObject
 	{
 	public:
-		// Connection creation and subscription
-		// The subId below identifies the subscription ID for the connection
+		// the tag is a value sent from the subscription filter to the listener
+		// wasCreated is true if the subscription was created after the filter
+		// was added; if the connection was already in existence then wasCreated
+		// is false.  (This may indicate lost events)
+		virtual void
+			OnConnectionFound(pubsub::UserSubscriptionID subId,
+				ConnectionID connId,
+				bool wasCreated,
+				ConnectionState startState,
+				ConnectionInfoTag tag) = 0;
 
-		// Note that the first function is also called when a listening connection
-		// gets a new client.
-
-		virtual ConnectionInterest
-			OnActiveConnectionCreated(ConnectionID connId,
-				pubsub::UserSubscriptionID subId,
-				const ActiveConnArgs& connArgs) = 0;
-		virtual ConnectionInterest
-			OnListeningConnectionCreated(ConnectionID connId,
-				pubsub::UserSubscriptionID subId,
-				const ListeningConnArgs& connArgs) = 0;
+		virtual void
+			OnConnectionDestroyed(pubsub::UserSubscriptionID subId,
+				ConnectionID connID) = 0;
 
 		// Connection state
-		// No need to supply the previous state as each state has
-		// at most one predecessor in the state graph
-		virtual void OnStateChange(ConnectionID connId,
+		virtual void OnStateChange(pubsub::UserSubscriptionID subId,
+			ConnectionID connId,
+			ConnectionState prevState,
 			ConnectionState newState) = 0;
 
 		// Active connection messages (ID is in the message)
-		virtual void OnMessage(const std::shared_ptr<INetworkMessage>& pMsg) = 0;
-	};
-
-	class INetworkStatusListener : public base::IAppObject
-	{
-	public:
-		virtual void OnRequestStateChange(reqresp::RequestID reqId,
-			reqresp::RequestState newState) = 0;
+		virtual void OnMessage(pubsub::UserSubscriptionID subId, 
+			const std::shared_ptr<INetworkMessage>& pMsg) = 0;
 	};
 
 	class INetworkServiceProxy : public reqresp::IRequestIssuer,
@@ -107,14 +78,12 @@ namespace holder::network
 		// Translate a flat property table into an internal address object
 		virtual IAddress* CreateAddress(const base::IFlatPropertyTable& propTable) = 0;
 
-		// Subscribe to requests
+		// Subscribe to connection classes
+		// A connection class is a description of connections in terms of a filter
+		// The filter runs on the network service, and indicates interest in a connection
+		// The 
 		virtual pubsub::ServiceSubscriptionID
-			SubscribeToRequestStates(std::shared_ptr<INetworkStatusListener> pStatusListener,
-				pubsub::UserSubscriptionID userSubId) = 0;
-
-		// Subscribe to connection names based on regexes
-		virtual pubsub::ServiceSubscriptionID
-			SubscribeToConnections(const char* pNameRegex,
+			SubscribeToConnectionClass(std::shared_ptr<ISubscriptionFilter> pFilter,
 				std::shared_ptr<INetworkListener> pListener,
 				pubsub::UserSubscriptionID userSubId) = 0;
 
@@ -122,11 +91,14 @@ namespace holder::network
 		//  3) Send a message.
 		// (3) is not a true request, to avoid latency for useless information
 		virtual reqresp::RequestID
-			CreateActiveConnection(const ActiveConnArgs& connArgs) = 0;
+			CreateActiveConnection(const ActiveConnArgs& connArgs,
+				const reqresp::RequestDescription& reqDesc) = 0;
 		virtual reqresp::RequestID
-			CreateListeningConnection(const ListeningConnArgs& connArgs) = 0;
+			CreateListeningConnection(const ListeningConnArgs& connArgs,
+				const reqresp::RequestDescription& reqDesc) = 0;
 		virtual reqresp::RequestID
-			IssueCommand(ConnectionID connId, ConnectionCommand command) = 0;
+			IssueCommand(ConnectionID connId, ConnectionCommand command,
+				const reqresp::RequestDescription& reqDesc) = 0;
 
 		// Connection ID is in the message
 		virtual void

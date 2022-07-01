@@ -2,6 +2,7 @@
 
 #include "IAppObject.h"
 #include "Messaging.h"
+#include "NetworkDatatypes.h"
 
 #include <cinttypes>
 #include <memory>
@@ -10,9 +11,6 @@ namespace holder::network
 {
 	class IAddress;
 
-	using NetworkSizeType = uint32_t;
-	using ConnPropertyIDType = uint32_t;
-	using ConnectionID = uint64_t;
 
 	class INetworkMessage : public messages::IMessage
 	{
@@ -52,6 +50,19 @@ namespace holder::network
 		// to save an enormous amount of time accepting, for example, only known
 		// connections
 		virtual bool ShouldAcceptConnection(const IAddress& remoteAddress) = 0;
+	};
+
+	class ISubscriptionFilter : public base::IAppObject
+	{
+	public:
+		// Filter connections to decide which match a given subscription
+		// The tag is ignored unless the connection is subscribed; if it is,
+		// the tag is sent to the subscriber as additional information about
+		// the connection
+		virtual bool ShouldSubscribeToConnection(const char* pConnectionName,
+			ConnectionType connectionType,
+			const IAddress* pAddress,
+			ConnectionInfoTag& tag) = 0;
 	};
 
 }

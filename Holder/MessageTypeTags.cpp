@@ -44,3 +44,15 @@ types::TypeTag impl_ns::GetRequestIncomingMessageTag()
 	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/RequestIncomingMessage") };
 	return tag;
 }
+
+types::TypeTag impl_ns::GetSCommClientMessageTag()
+{
+	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/SCommClientMessage") };
+	return tag;
+}
+
+types::TypeTag impl_ns::GetSCommServiceMessageTag()
+{
+	static types::TypeTag tag{ types::TypeTagManager::GetType("/messages/core/SCommServiceMessage") };
+	return tag;
+}

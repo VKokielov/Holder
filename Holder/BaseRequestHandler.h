@@ -70,7 +70,8 @@ namespace holder::reqresp
 			:m_owner(bhInitializer.pOwner),
 			m_requestInfoID(bhInitializer.requestInfoID),
 			m_clientID(bhInitializer.clientID),
-			m_requestID(bhInitializer.requestID)
+			m_requestID(bhInitializer.requestID),
+			m_pRemoteEndpoint(bhInitializer.pRemoteEndpoint)
 		{ }
 
 		virtual void OnRequestCancelled();
