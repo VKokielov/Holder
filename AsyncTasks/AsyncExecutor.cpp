@@ -3,7 +3,7 @@
 atask::AsyncTaskExecutor::TaskExecutorThread::TaskExecutorThread(AsyncTaskExecutor& owner)
 	:m_owner(owner)
 {
-	m_thread = std::thread(&TaskExecutorThread::Run, this);
+	m_thread.reset (new std::thread(&TaskExecutorThread::Run, this));
 }
 void atask::AsyncTaskExecutor::TaskExecutorThread::Run()
 {
@@ -18,6 +18,11 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::Run()
 		todoList.clear();
 		{
 			std::unique_lock lk{ m_mutex };
+			while (m_todoList.empty())
+			{
+				m_cv.wait(lk);
+			}
+
 			std::swap(todoList, m_todoList);
 		}
 
@@ -61,6 +66,8 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::Run()
 			unfinishedBusiness.pop_front();
 			++numProcessed;
 		}
+
+		m_owner.PostTaskCompletions(completionMessages);
 	}
 }
 
@@ -68,13 +75,34 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::PostTask(PackagedTask&& task)
 {
 	std::unique_lock lk{ m_mutex };
 	m_todoList.push_back(std::move(task));
+	m_cv.notify_one();
 	++m_taskLoad;
 }
 
 void atask::AsyncTaskExecutor::TaskExecutorThread::Join()
 {
 	m_stopFlag.store(true);
-	m_thread.join();
+	m_thread->join();
+}
+
+atask::AsyncTaskExecutor::AsyncTaskExecutor(size_t threadCount)
+{
+	++threadCount;
+
+	while (threadCount > 0)
+	{
+		m_threads.emplace_back(new TaskExecutorThread(*this));
+		--threadCount;
+	}
+	
+}
+atask::AsyncTaskExecutor::~AsyncTaskExecutor()
+{
+	std::shared_lock lk(m_mutex);
+	for (auto& thread : m_threads)
+	{
+		thread->Join();
+	}
 }
 
 atask::TaskResult atask::AsyncTaskExecutor::ExecuteGraph(atask::AsyncGraphOrder& graph)
@@ -95,7 +123,7 @@ atask::TaskResult atask::AsyncTaskExecutor::TaskContext::RunAllTasks(AsyncGraphO
 {
 	bool isInitial{ true };
 
-	unsigned long pendingTasks{ 0 };
+	size_t pendingTasks{ 0 };
 	TaskListAcceptor tasksToExecute(m_contextId);
 
 	// Begin by getting the next set of tasks to execute
@@ -111,6 +139,7 @@ atask::TaskResult atask::AsyncTaskExecutor::TaskContext::RunAllTasks(AsyncGraphO
 		{
 			m_owner.PostTaskToThread(std::move(pendingTask));
 		}
+		tasksToExecute.taskList.clear();
 
 		// Wait for completion
 		{
@@ -128,9 +157,12 @@ atask::TaskResult atask::AsyncTaskExecutor::TaskContext::RunAllTasks(AsyncGraphO
 		pendingTasks -= completionQueue.size();
 
 		// Add pending dependencies
-		graph.GetTasksToExecute(completionQueue.begin(), completionQueue.end(), tasksToExecute);
+		while (!completionQueue.empty())
+		{
+			graph.GetTasksToExecute(completionQueue.front().taskId, tasksToExecute);
+			completionQueue.pop_front();
+		}
 		pendingTasks += tasksToExecute.taskList.size();
-		tasksToExecute.taskList.clear();
 	}
 
 	return !graph.HasUnexecutedTasks() ? TaskResult::ExecutionComplete : TaskResult::UnableToProgress;
@@ -167,15 +199,15 @@ void atask::AsyncTaskExecutor::PostTaskToThread(PackagedTask&& task)
 		unsigned long smallestLoad{ 100000000 };
 		std::shared_lock lk(m_mutex);
 
-		pThread = &m_threads.front();
+		pThread = m_threads.front().get();
 
 		for (size_t i = 0; i < m_threads.size(); ++i)
 		{
-			auto threadLoad = m_threads[i].AtomicGetLoad();
+			auto threadLoad = m_threads[i]->AtomicGetLoad();
 			if (threadLoad < smallestLoad)
 			{
 				smallestLoad = threadLoad;
-				pThread = &m_threads[i];
+				pThread = m_threads[i].get();
 			}
 		}
 	}

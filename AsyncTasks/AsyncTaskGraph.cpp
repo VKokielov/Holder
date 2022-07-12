@@ -12,8 +12,7 @@ atask::AsyncGraphOrder::AsyncGraphOrder(const AsyncGraphBuilder& builder)
 		++taskId)
 	{
 		// Copy dependencies and set dependency counts
-		m_taskStates.emplace_back();
-		auto& taskStateOrder = m_taskStates.back();
+		auto& taskStateOrder = m_taskStates[taskId];
 
 		const auto& builderTask = builder.m_vertices[taskId];
 
@@ -55,8 +54,8 @@ atask::TaskID atask::AsyncGraphBuilder::AddTask(std::shared_ptr<ITask> pTask)
 {
 	auto nextID = (TaskID)m_vertices.size();
 
-	auto itVx = m_vertices.emplace_back();
-	itVx.pTask = pTask;
+	m_vertices.emplace_back();
+	m_vertices.back().pTask = pTask;
 
 	return nextID;
 }

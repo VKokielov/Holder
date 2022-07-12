@@ -54,27 +54,19 @@ namespace atask
 		}
 
 		// Note:  Task 0 is always the "initial task" on which all tasks depend
-		template<typename F, typename I>
-		void GetTasksToExecute(I itBeginComplete, I itEndComplete,
+		template<typename F>
+		void GetTasksToExecute(TaskID taskId,
 			F&& taskCallback)
 		{ 
-			// Initial tasks are those which have no dependencies
+			--m_executingTasks;
 
-			for (I itComplete = itBeginComplete;
-				itComplete != itEndComplete;
-				++itComplete)
+			for (TaskID taskDepId : m_taskStates[taskId].dependentTasks)
 			{
-				TaskID taskId = *itComplete;
-				--m_executingTasks;
-
-				for (TaskID taskDepId : m_taskStates[taskId].dependentTasks)
+				--m_taskStates[taskDepId].dependencyCount;
+				if (m_taskStates[taskDepId].dependencyCount == 0)
 				{
-					--m_taskStates[taskDepId].dependencyCount;
-					if (m_taskStates[taskDepId].dependencyCount == 0)
-					{
-						++m_executingTasks;
-						taskCallback(taskDepId, m_taskStates[taskDepId].pTask);
-					}
+					++m_executingTasks;
+					taskCallback(taskDepId, m_taskStates[taskDepId].pTask);
 				}
 			}
 		}

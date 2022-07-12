@@ -63,7 +63,6 @@ namespace atask
 		class TaskExecutorThread
 		{
 		public:
-
 			TaskExecutorThread(AsyncTaskExecutor& m_owner);
 
 			void Join();
@@ -78,11 +77,12 @@ namespace atask
 			void Run();
 
 			AsyncTaskExecutor& m_owner;
-			std::thread m_thread;
+			std::unique_ptr<std::thread> m_thread;
 			std::mutex m_mutex;
+			std::condition_variable m_cv;
 			std::deque<PackagedTask> m_todoList;
-			std::atomic<unsigned long> m_taskLoad;
-			std::atomic<bool> m_stopFlag;
+			std::atomic<unsigned long> m_taskLoad{ 0 };
+			std::atomic<bool> m_stopFlag{ false };
 		};
 
 		class TaskContext
@@ -131,6 +131,8 @@ namespace atask
 		};
 
 	public:
+		AsyncTaskExecutor(size_t threadCount);
+		~AsyncTaskExecutor();
 
 		TaskResult ExecuteGraph(AsyncGraphOrder& taskOrder);
 	private:
@@ -144,7 +146,7 @@ namespace atask
 		std::condition_variable m_cv;
 
 		std::deque<TaskCompletionMessage> m_taskCompletions;
-		std::vector<TaskExecutorThread> m_threads;
+		std::vector<std::unique_ptr<TaskExecutorThread> > m_threads;
 		
 		std::unordered_map<size_t, TaskContext> m_taskContexts;
 		size_t m_freeContextId{ 0 };
