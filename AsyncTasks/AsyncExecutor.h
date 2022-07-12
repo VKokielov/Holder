@@ -8,6 +8,7 @@
 #include <atomic>
 #include <deque>
 #include <shared_mutex>
+#include <unordered_map>
 
 namespace atask
 {
@@ -16,7 +17,7 @@ namespace atask
 	{
 		ExecutionComplete,
 		// If this is returned, there was a dependency in the graph
-		UnableToProgress 
+		UnableToProgress
 	};
 
 	enum class TaskWaitResult
@@ -29,8 +30,8 @@ namespace atask
 	{
 	private:
 		// The task context is local to the execution and
-		// is guaranteed to exist 
-		
+		// is guaranteed to exist
+
 		class TaskContext;
 
 		struct PackagedTask
@@ -53,7 +54,7 @@ namespace atask
 			size_t contextId;
 			TaskID taskId;
 
-			TaskCompletionMessage(size_t contextId_, 
+			TaskCompletionMessage(size_t contextId_,
 				TaskID taskId_)
 				:contextId(contextId_),
 				taskId(taskId_)
@@ -95,7 +96,7 @@ namespace atask
 					:m_contextId(contextId)
 				{ }
 
-				void operator()(TaskID taskId, 
+				void operator()(TaskID taskId,
 					std::shared_ptr<ITask> pTask)
 				{
 					taskList.emplace_back(taskId, pTask, m_contextId);
@@ -147,7 +148,7 @@ namespace atask
 
 		std::deque<TaskCompletionMessage> m_taskCompletions;
 		std::vector<std::unique_ptr<TaskExecutorThread> > m_threads;
-		
+
 		std::unordered_map<size_t, TaskContext> m_taskContexts;
 		size_t m_freeContextId{ 0 };
 
