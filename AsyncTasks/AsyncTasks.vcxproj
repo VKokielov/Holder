@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{D678E408-D315-4AB7-8987-24EE00B59D65}</ProjectGuid>
+    <ProjectGuid>{9DE884CA-9133-40DA-957A-C21705526A87}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Holder</RootNamespace>
+    <RootNamespace>AsyncTasks</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,10 +70,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -82,21 +82,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>
@@ -107,6 +92,21 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,7 +143,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,100 +152,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AppLibrary.cpp" />
-    <ClCompile Include="BaseClientObject.cpp" />
-    <ClCompile Include="BaseMessageHandler.cpp" />
-    <ClCompile Include="BaseProxy.cpp" />
-    <ClCompile Include="BaseRequestHandler.cpp" />
-    <ClCompile Include="BaseRequestInfo.cpp" />
-    <ClCompile Include="BaseRequestIssuer.cpp" />
-    <ClCompile Include="BaseRequestMessages.cpp" />
-    <ClCompile Include="BaseServiceCommClient.cpp" />
-    <ClCompile Include="BaseServiceCommService.cpp" />
-    <ClCompile Include="BaseServiceConfiguration.cpp" />
-    <ClCompile Include="MessageTypeTags.cpp" />
-    <ClCompile Include="ServiceCommMessages.cpp" />
-    <ClCompile Include="ServiceMessageLib.cpp" />
-    <ClCompile Include="BaseStarter.cpp" />
-    <ClCompile Include="ConsoleTextService.cpp" />
-    <ClCompile Include="ExecutionManager.cpp" />
-    <ClCompile Include="Holder.cpp" />
-    <ClCompile Include="MessageDequeDispatcher.cpp" />
-    <ClCompile Include="MQDExecutor.cpp" />
-    <ClCompile Include="PathFromString.cpp" />
-    <ClCompile Include="SharedObjects.cpp" />
-    <ClCompile Include="SharedObjectStore.cpp" />
-    <ClCompile Include="SingletonConfig.cpp" />
-    <ClCompile Include="StartupTaskManager.cpp" />
-    <ClCompile Include="TestServiceAlpha.cpp" />
-    <ClCompile Include="TestStarter.cpp" />
-    <ClCompile Include="TypeTags.cpp" />
+    <ClCompile Include="AsyncExecutor.cpp" />
+    <ClCompile Include="AsyncTaskGraph.cpp" />
+    <ClCompile Include="AsyncTasks.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AppArgumentHelper.h" />
-    <ClInclude Include="AppLibrary.h" />
-    <ClInclude Include="BaseClientObject.h" />
-    <ClInclude Include="BaseMessageDispatch.h" />
-    <ClInclude Include="BaseMessageHandler.h" />
-    <ClInclude Include="BaseProxy.h" />
-    <ClInclude Include="BasePublisher.h" />
-    <ClInclude Include="BaseRequestHandler.h" />
-    <ClInclude Include="BaseRequestInfo.h" />
-    <ClInclude Include="BaseRequestIssuer.h" />
-    <ClInclude Include="BaseService.h" />
-    <ClInclude Include="BaseServiceCommClient.h" />
-    <ClInclude Include="BaseServiceCommService.h" />
-    <ClInclude Include="BaseServiceConfiguration.h" />
-    <ClInclude Include="BaseSubscriber.h" />
-    <ClInclude Include="FlatPropertyTable.h" />
-    <ClInclude Include="IConnectionHandler.h" />
-    <ClInclude Include="IServiceComm.h" />
-    <ClInclude Include="MessageLib.h" />
-    <ClInclude Include="MessageTypeTags.h" />
-    <ClInclude Include="NetworkDatatypes.h" />
-    <ClInclude Include="RequestDeltas.h" />
-    <ClInclude Include="ServiceCommMessages.h" />
-    <ClInclude Include="ServiceMessageLib.h" />
-    <ClInclude Include="BaseServiceObject.h" />
-    <ClInclude Include="BaseStarter.h" />
-    <ClInclude Include="CloneHelper.h" />
-    <ClInclude Include="ConsoleTextService.h" />
-    <ClInclude Include="ExecutionManager.h" />
-    <ClInclude Include="IAppObject.h" />
-    <ClInclude Include="IAppObjectFactory.h" />
-    <ClInclude Include="IExecutor.h" />
-    <ClInclude Include="INetworkService.h" />
-    <ClInclude Include="IProxy.h" />
-    <ClInclude Include="IPublishSubscribe.h" />
-    <ClInclude Include="BaseRequestMessages.h" />
-    <ClInclude Include="IRequestResponse.h" />
-    <ClInclude Include="IService.h" />
-    <ClInclude Include="ISharedObject.h" />
-    <ClInclude Include="ITextService.h" />
-    <ClInclude Include="MessageDequeDispatcher.h" />
-    <ClInclude Include="Messaging.h" />
-    <ClInclude Include="MiniSpinMutex.h" />
-    <ClInclude Include="MQDExecutor.h" />
-    <ClInclude Include="ObjectTree.h" />
-    <ClInclude Include="PathLib.h" />
-    <ClInclude Include="RaiiLambda.h" />
-    <ClInclude Include="RegistrationHelper.h" />
-    <ClInclude Include="AppObjectFactoryImpl.h" />
-    <ClInclude Include="RegistrationHelperAliases.h" />
-    <ClInclude Include="SharedObjects.h" />
-    <ClInclude Include="SharedObjectStore.h" />
-    <ClInclude Include="SharedObjectStoreInterfaces.h" />
-    <ClInclude Include="SingletonConfig.h" />
-    <ClInclude Include="SingletonConfigBase.h" />
-    <ClInclude Include="IStarter.h" />
-    <ClInclude Include="StartupTaskManagerInterfaces.h" />
-    <ClInclude Include="StartupTaskManager.h" />
-    <ClInclude Include="PathFromString.h" />
-    <ClInclude Include="TestServiceAlpha.h" />
-    <ClInclude Include="TestStarter.h" />
-    <ClInclude Include="TimedMessageSender.h" />
-    <ClInclude Include="TypeTagDisp.h" />
-    <ClInclude Include="TypeTags.h" />
+    <ClInclude Include="AsyncExecutor.h" />
+    <ClInclude Include="AsyncTaskGraph.h" />
+    <ClInclude Include="AsyncTaskInterface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

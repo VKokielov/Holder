@@ -25,7 +25,7 @@ bool impl_ns::BaseRequestInfo::Updater::IsValid() const
 	}
 	else if (stateToBe == RequestState::Completed || stateToBe == RequestState::Failed)
 	{
-		isValid = hasResult && m_target.m_requestState == RequestState::Issued);
+		isValid = hasResult && m_target.m_requestState == RequestState::Issued;
 	}
 	else if (stateToBe == RequestState::CanceledTimeout || stateToBe == RequestState::CanceledUser)
 	{
