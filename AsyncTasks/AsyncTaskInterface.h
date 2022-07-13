@@ -13,6 +13,7 @@ namespace atask
 	{
 	public:
 		virtual TaskState Run() = 0;
+		virtual ~ITask() = default;
 	};
 
 }
