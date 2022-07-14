@@ -27,7 +27,7 @@ namespace holder::messages
 		void DoSignal() override;
 		base::ExecutorID GetExecutorID() const { return m_myExecutor.load(); }
 
-		const char* GetExecutionThreadName() const { return m_threadName.c_str(); }
+		const char* GetExecutionThreadName() const override { return m_threadName.c_str(); }
 
 	private:
 		std::string m_threadName;

@@ -12,6 +12,7 @@ namespace holder::messages
 	using DispatchID = uint32_t;
 	using ReceiverID = uint32_t;
 
+	class MessageException { };
 
 	class IMessage : public base::IAppObject
 	{
@@ -29,6 +30,7 @@ namespace holder::messages
 	class IMessageListener : public base::IAppObject
 	{
 	public:
+		virtual void OnReceiverReady(DispatchID dispatchId) = 0;
 		virtual void OnMessage(const std::shared_ptr<IMessage>& pMsg, DispatchID dispatchId) = 0;
 	};
 
@@ -48,10 +50,10 @@ namespace holder::messages
 			CreateReceiver(const std::shared_ptr<IMessageListener>& pListener,
 				std::shared_ptr<IMessageFilter> pFilter,
 				DispatchID dispatchId) = 0;
-		virtual bool RemoveReceiver(ReceiverID rcvrId) = 0;
-		virtual std::shared_ptr<ISenderEndpoint>
-			CreateEndpoint(ReceiverID rcvrId) = 0;
-		
+		virtual void RemoveReceiver(ReceiverID rcvrId) = 0;
+		virtual void SendMessage(ReceiverID rcvrId, std::shared_ptr<IMessage> pMessage)
+			= 0;
+		virtual const char* GetExecutionThreadName() const = 0;
 	};
 
 }

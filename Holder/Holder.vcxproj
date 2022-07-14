@@ -204,6 +204,7 @@
     <ClInclude Include="MessageLib.h" />
     <ClInclude Include="MessageTypeTags.h" />
     <ClInclude Include="NetworkDatatypes.h" />
+    <ClInclude Include="QueueManager.h" />
     <ClInclude Include="RequestDeltas.h" />
     <ClInclude Include="ServiceCommMessages.h" />
     <ClInclude Include="ServiceMessageLib.h" />
