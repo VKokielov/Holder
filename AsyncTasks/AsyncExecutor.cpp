@@ -87,14 +87,10 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::Join()
 
 atask::AsyncTaskExecutor::AsyncTaskExecutor(size_t threadCount)
 {
-	++threadCount;
-
-	while (threadCount > 0)
+	for (;threadCount > 0; --threadCount)
 	{
 		m_threads.emplace_back(new TaskExecutorThread(*this));
-		--threadCount;
 	}
-	
 }
 atask::AsyncTaskExecutor::~AsyncTaskExecutor()
 {
