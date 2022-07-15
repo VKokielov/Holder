@@ -30,14 +30,6 @@ namespace holder::scomm
 		class Client
 		{
 		public:
-
-			bool FindSubscription(SubscriptionID subID,
-				InternalSubscriptionID& outID) const;
-
-			bool FindRequest(RequestID reqID,
-				InternalRequestID& outID) const;
-
-		private:
 			std::weak_ptr<messages::ISenderEndpoint> m_pRemoteEndpoint;
 
 			// Subscriptions
@@ -48,21 +40,13 @@ namespace holder::scomm
 				m_reqMap;
 		};
 
-		class ClientObjectStub
-		{
-
-		private:
-			// This is a always valid pointer because when a client is removed,
-			// all associated objects are also removed
-			Client* m_pClient;
-			messages::DispatchID m_clientID;
-		};
-
 		class Subscription
 		{
 
 		private:
 			SubscriptionID m_subscriptionID;
+			messages::DispatchID m_clientID;
+			std::weak_ptr<messages::ISenderEndpoint> m_pRemoteEndpoint;
 		};
 
 		class Request
@@ -70,6 +54,9 @@ namespace holder::scomm
 
 		private:
 			RequestID m_requestID;
+			messages::DispatchID m_clientID;
+			std::weak_ptr<messages::ISenderEndpoint> m_pRemoteEndpoint;
+
 			bool m_completed{ false };
 		};
 
@@ -111,9 +98,6 @@ namespace holder::scomm
 			bool success,
 			std::shared_ptr<base::IAppObject> pResult);
 
-		virtual void OnRequestCanceled(InternalRequestID reqID);
-		virtual void OnUnsubscribed(InternalSubscriptionID subID);
-
 		virtual void OnSubscriptionError(messages::DispatchID clientID,
 			SubscriptionID subID,
 			SubscriptionError subError);
@@ -121,6 +105,15 @@ namespace holder::scomm
 		virtual void OnRequestError(messages::DispatchID clientID,
 			RequestID requestID,
 			RequestError reqError);
+
+		// Messaging
+		template<typename TagDispatch>
+		static void InitializeTagDispatch(const messages::IMessage*,
+			TagDispatch& tagDispatchTable)
+		{
+			tagDispatchTable.AddDispatch(base::constants::GetSCommClientMessageTag(),
+				&BaseServiceCommService::OnSCommClientMessage);
+		}
 
 	private:
 		bool m_diagnosticMode;

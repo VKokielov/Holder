@@ -5,13 +5,9 @@
 namespace impl_ns = holder::messages;
 namespace msg_ns = holder::messages;
 
+/*
 bool impl_ns::MessageDequeDispatcher::MQDSenderEndpoint::SendMessage(const std::shared_ptr<IMessage>& pMsg)
 {
-	if (!pMsg
-		|| (m_pFilter && !m_pFilter->CanSendMessage(*pMsg)))
-	{
-		return false;
-	}
 
 	MQDEnvelope envelope(pMsg, m_receiverID);
 	auto pSharedDispatcher = m_pDispatcher.lock();
@@ -24,21 +20,39 @@ bool impl_ns::MessageDequeDispatcher::MQDSenderEndpoint::SendMessage(const std::
 
 	return false;
 }
+*/
+
+void impl_ns::MessageDequeDispatcher::SendMessage(ReceiverID rcvrId, std::shared_ptr<IMessage> pMessage)
+{
+	MQDMessageEnvelope envelope(rcvrId, std::move(pMessage));
+	++m_totalSize;
+	PostMessage(std::move(envelope), m_queue);
+}
 
 msg_ns::ReceiverID
 impl_ns::MessageDequeDispatcher::CreateReceiver(const std::shared_ptr<msg_ns::IMessageListener>& pListener,
 	std::shared_ptr<IMessageFilter> pFilter,
 	msg_ns::DispatchID dispatchId)
 {
-	std::unique_lock lkQueue(m_mutexQueue);
+	if (!pListener)
+	{
+		throw MessageException();
+	}
 
-	m_receiverMap.emplace(std::piecewise_construct, 
-		std::forward_as_tuple(m_freeRcvId), 
-		std::forward_as_tuple(m_freeRcvId, dispatchId, pListener, pFilter));
-
-	return 	m_freeRcvId++;
+	ReceiverID newReceiverID = m_freeRcvId++;
+	MQDCreateReceiverEnvelope envelope(newReceiverID, pListener, pFilter, dispatchId);
+	PostMessage(std::move(envelope), m_createQueue);
+	return newReceiverID;
 }
 
+
+void impl_ns::MessageDequeDispatcher::RemoveReceiver(ReceiverID rcvId)
+{
+	MQDRemoveReceiverEnvelope envelope(rcvId);
+	PostMessage(std::move(envelope), m_removeQueue);
+}
+
+/*
 std::shared_ptr<impl_ns::ISenderEndpoint> impl_ns::MessageDequeDispatcher::CreateEndpoint(ReceiverID rcvrId)
 {
 	// Fetch the filter in case there is one
@@ -59,13 +73,64 @@ std::shared_ptr<impl_ns::ISenderEndpoint> impl_ns::MessageDequeDispatcher::Creat
 
 	return pRet;
 }
+*/
+
+
+void impl_ns::MessageDequeDispatcher::MQDMessageEnvelope::Act(MessageDequeDispatcher& dispatcher)
+{
+	auto itReceiver = dispatcher.m_receiverMap.find(GetReceiverID());
+	if (itReceiver != dispatcher.m_receiverMap.end())
+	{
+		itReceiver->second.Dispatch(m_pMessage);
+	}
+	else
+	{
+		dispatcher.OnLostMessage(m_pMessage, GetReceiverID());
+	}
+}
+
+void impl_ns::MessageDequeDispatcher::MQDCreateReceiverEnvelope::Act(MessageDequeDispatcher& dispatcher)
+{
+	dispatcher.m_receiverMap.emplace(std::piecewise_construct,
+		std::forward_as_tuple(GetReceiverID()),
+		std::forward_as_tuple(GetReceiverID(), m_dispatchId, m_pListener, m_pFilter));
+
+	m_pListener->OnReceiverReady(m_dispatchId);
+}
+
+void impl_ns::MessageDequeDispatcher::MQDRemoveReceiverEnvelope::Act(MessageDequeDispatcher& dispatcher)
+{
+	auto itReceiver = dispatcher.m_receiverMap.find(GetReceiverID());
+	if (itReceiver != dispatcher.m_receiverMap.end())
+	{
+		dispatcher.m_receiverMap.erase(itReceiver);
+	}
+}
 
 void impl_ns::MessageDequeDispatcher::ProcessMessages(WorkStateDescription& workState)
 {
-	if (m_localQueue.empty())
 	{
 		std::unique_lock lkQueue(m_mutexQueue);
-		m_localQueue.swap(m_queue);
+		if (m_localQueue.empty())
+		{
+			m_localQueue.swap(m_queue);
+		}
+
+		m_localCreateQueue.swap(m_createQueue);
+		m_localRemoveQueue.swap(m_removeQueue);
+	}
+
+	// Process all create and then all remove requests
+	while (!m_localCreateQueue.empty())
+	{
+		m_localCreateQueue.back().Act(*this);
+		m_localCreateQueue.pop_back();
+	}
+
+	while (!m_localRemoveQueue.empty())
+	{
+		m_localRemoveQueue.back().Act(*this);
+		m_localRemoveQueue.pop_back();
 	}
 
 	size_t msgsProcessed = 0;
@@ -74,19 +139,8 @@ void impl_ns::MessageDequeDispatcher::ProcessMessages(WorkStateDescription& work
 	while (msgsProcessed < msgsToProcess 
 		&& !m_localQueue.empty())
 	{
-		MQDEnvelope& rEnvelope = m_localQueue.back();
-
-		// Find the receiver
-		auto itReceiver = m_receiverMap.find(rEnvelope.GetReceiverID());
-
-		if (itReceiver != m_receiverMap.end())
-		{
-			itReceiver->second.Dispatch(rEnvelope.GetMessage());
-		}
-		else if (m_traceLostMessages)
-		{
-			OnLostMessage(rEnvelope.GetMessage(), rEnvelope.GetReceiverID());
-		}
+		MQDMessageEnvelope& rEnvelope = m_localQueue.back();
+		rEnvelope.Act(*this);
 		
 		m_localQueue.pop_back();
 		++msgsProcessed;
@@ -96,28 +150,6 @@ void impl_ns::MessageDequeDispatcher::ProcessMessages(WorkStateDescription& work
 	workState.msgsRemaining = m_totalSize.load();
 }
 
-void impl_ns::MessageDequeDispatcher::SendMessage(MQDEnvelope&& envelope)
-{
-	std::unique_lock lkQueue(m_mutexQueue);
-	
-	m_queue.push_front(std::move(envelope));
-	++m_totalSize;
-
-	DoSignal();
-}
-
-bool impl_ns::MessageDequeDispatcher::RemoveReceiver(ReceiverID rcvId)
-{
-	std::unique_lock lkQueue(m_mutexQueue);
-
-	auto itReceiver = m_receiverMap.find(rcvId);
-	if (itReceiver != m_receiverMap.end())
-	{
-		m_receiverMap.erase(itReceiver);
-	}
-
-	return true;
-}
 
 void impl_ns::MessageDequeDispatcher::OnLostMessage(const std::shared_ptr<IMessage>& pMessage,
 	ReceiverID rcvId)

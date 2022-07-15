@@ -293,5 +293,8 @@
     <ClInclude Include="BaseServiceCommService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="QueueManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

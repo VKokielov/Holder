@@ -77,8 +77,9 @@ namespace holder::scomm
 			RequestID reqID,
 			bool success,
 			std::shared_ptr<base::IAppObject> pResult,
-			unsigned long cancelReason)
-			:SubscriptionEventMessage(subID),
+			unsigned long cancelReason,
+			bool unsubscribe)
+			:SubscriptionEventMessage(subID, unsubscribe),
 			m_change(reqChange),
 			m_requestID(reqID),
 			m_success(success),
