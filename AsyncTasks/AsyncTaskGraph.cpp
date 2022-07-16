@@ -93,6 +93,14 @@ void atask::AsyncGraphBuilder::AddDependency(TaskID fromId, TaskID toId)
 	toTask.vTo.emplace(fromId);
 }
 
+void atask::AsyncGraphBuilder::AddDependency(TaskID fromId, std::vector<TaskID>&& toIDs)
+{
+	for(auto&& toId: toIDs)
+	{
+		AddDependency(fromId,toId);
+	}
+}
+
 atask::AsyncGraphOrder atask::AsyncGraphBuilder::ConstructGraph()
 {
 	return AsyncGraphOrder(*this);
