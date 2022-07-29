@@ -16,14 +16,14 @@ atask::AsyncGraphOrder::AsyncGraphOrder(const AsyncGraphBuilder& builder)
 
 		const auto& builderTask = builder.m_vertices[taskId];
 
-		taskStateOrder.dependentTasks.resize(builderTask.vTo.size());
+		taskStateOrder.dependentTasks.reserve(builderTask.vTo.size());
 
 		for (TaskID depTask : builderTask.vTo)
 		{
 			taskStateOrder.dependentTasks.emplace_back(depTask);
 		}
-		
-		taskStateOrder.dependencyCount 
+
+		taskStateOrder.dependencyCount
 			= taskStateOrder.originalDependencyCount
 			= builderTask.vFrom.size();
 
