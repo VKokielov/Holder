@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Messaging.h"
+#include "BaseMessageDispatch.h"
+#include "QueueManager.h"
 
 #include <memory>
 
@@ -8,52 +10,201 @@ namespace holder::messages
 {
 
 	// Base message handler class for a single receiver with no dispatch ID
+	class NoDefaultReceiverException { };
 
-	class BaseMessageHandler : public IMessageListener
+	template<typename Derived, typename ... Bases>
+	class BaseMessageHandler : public IMessageListener, public Bases...
 	{
-	public:
-		~BaseMessageHandler()
-		{
-			auto pDispatcher = m_pDispatcher.lock();
+	protected:
+		using Client = typename Derived::Client;
 
-			if (pDispatcher)
+		class BaseClient
+		{
+		public:
+
+			BaseClient(QueueID queueID, 
+				messages::DispatchID dispatchID,
+				std::shared_ptr<BaseMessageHandler> pListener)
 			{
-				pDispatcher->RemoveReceiver(m_myReceiverID);
+				CreateReceiverArgs rcvrArgs;
+				rcvrArgs.dispatchId = dispatchID;
+				rcvrArgs.pListener = std::move(pListener);
+
+				m_receiverID
+					= QueueManager::GetInstance().CreateReceiver(queueID,
+						rcvrArgs);
+			}
+
+			~BaseClient()
+			{
+				QueueManager::GetInstance().RemoveReceiver(m_receiverID);
+			}
+
+			std::shared_ptr<ISenderEndpoint>
+				CreateSenderEndpoint()
+			{
+				return
+					QueueManager::GetInstance().CreateEndpoint(m_queueID, m_receiverID);
+			}
+
+		protected:
+			ReceiverID GetReceiverID() const { return m_receiverID; }
+
+		private:
+			QueueID m_queueID;
+			ReceiverID m_receiverID;
+		};
+
+		static_assert(std::is_base_of_v<BaseClient, Client>, "Client must derive from BaseMessageHandler::BaseClient");
+
+	public:
+		virtual void OnReceiverReady(DispatchID dispatchId) { }
+		
+		virtual void OnMessage(const std::shared_ptr<IMessage>& pMsg, 
+			DispatchID dispatchID)
+		{
+			Derived* pThisDerived = static_cast<Derived*>(this);
+
+			MessageDispatch<Derived>& dispTable = GetMessageDispatchTable();
+
+			if (!dispTable(pThisDerived, 
+				pMsg->GetTag(),
+				pMsg, 
+				dispatchID))
+			{
+				OnUnknownMessage(pMsg, dispatchID);
 			}
 		}
 
-		std::shared_ptr<messages::ISenderEndpoint>
-			CreateSenderEndpoint();
-
-		virtual void CreateReceiver();
+		ReceiverID GetDefaultReceiverID() const
+		{
+			if (!m_defaultReceiverID.has_value())
+			{
+				throw NoDefaultReceiverException();
+			}
+			return m_defaultReceiverID.value();
+		}
 
 	protected:
 		virtual std::shared_ptr<BaseMessageHandler>
-			GetMyBaseHandlerSharedPtr() = 0;
+			GetListenerPointer() = 0;
 
-		std::shared_ptr<IMessageDispatcher>
-			LockDispatcher() const
+		virtual void OnNewClient(DispatchID clientID) { }
+		virtual void OnRemovingClient(DispatchID clientID) { }
+
+		virtual void OnUnknownMessage(const std::shared_ptr<IMessage> pMsg,
+			messages::DispatchID dispatchID) { }
+
+		virtual void OnUnknownClient(const std::shared_ptr<IMessage> pMsg,
+			messages::DispatchID dispatchID) { }
+
+		BaseMessageHandler(QueueID queueID)
+			:m_myQueueID(queueID)
 		{
-			return m_pDispatcher.lock();
+
 		}
 
-		ReceiverID GetReceiverID_() const { return m_myReceiverID; }
-
-		BaseMessageHandler(const std::shared_ptr<IMessageDispatcher>& pDispatcher,
-			std::shared_ptr<IMessageFilter> pFilter =
-					std::shared_ptr<IMessageFilter>())
-			:m_pDispatcher(pDispatcher),
-			m_pFilter(std::move(pFilter))
+		void CreateDefaultReceiver()
 		{
+			const std::shared_ptr<IMessageListener>& pListener = GetListenerPointer();
+
+			CreateReceiverArgs rcvrArgs;
+			rcvrArgs.dispatchId = 0;
+			rcvrArgs.pListener = pListener;
+
+			ReceiverID defaultID
+				= QueueManager::GetInstance().CreateReceiver(m_myQueueID,
+					rcvrArgs);
+
+			m_defaultReceiverID.emplace(defaultID);
 		}
 
-		bool HasReceiver() const { return m_hasReceiver; }
+		template<typename ... Args>
+		DispatchID CreateClient(Args&.... args)
+		{
+			DispatchID newID{ m_freeClientID++ };
+
+			m_clientMap.emplace(std::piecewise_construct,
+				std::forward_as_tuple(newID),
+				std::forward_as_tuple(m_myQueueID, newID, GetListenerPointer(),
+					std::forward<Args>(args)...);
+
+			OnNewClient(newID);
+			return newID;
+		}
+
+
+		Client* GetClient(DispatchID dispatchID)
+		{
+			auto itClient = m_clientMap.find(dispatchID);
+
+			if (itClient != m_clientMap.end())
+			{
+				return &itClient->second;
+			}
+
+			return nullptr;
+		}
+
+		bool RemoveClient(DispatchID dispatchID)
+		{
+			auto itClient = m_clientMap.find(dispatchID);
+			if (itClient != m_clientMap.end())
+			{
+				OnRemovingClient(dispatchID);
+				m_clientMap.erase(itClient);
+				return true;
+			}
+
+			return false;
+		}
+
+		// For messages that can be dispatched to clients
+		template<typename MsgType>
+		void DispatchToClient(const std::shared_ptr<MsgType>& pMessage,
+			DispatchID dispatchID)
+		{
+			static_cast(std::is_base_of_v<IMessage, MsgType>,
+				"MsgType must derive from IMessage");
+
+			auto itClient = m_clientMap.find(dispatchID);
+
+			if (itClient != m_clientMap.end())
+			{
+				pClient = &itClient->second;
+			}
+
+			if (!pClient)
+			{
+				// Downcast
+				OnUnknownClient(pMessage, dispatchID);
+				return;
+			}
+
+			pClient->OnMessage(pMessage);
+		}
+
+		QueueID GetQueueID() const
+		{
+			return m_myQueueID;
+		}
 
 	private:
-		std::weak_ptr<IMessageDispatcher> m_pDispatcher;
-		std::shared_ptr<IMessageFilter> m_pFilter;
+		
+		static MessageDispatch<Derived>& GetMessageDispatchTable()
+		{
+			// The constructor of the dispatch calls a static function on the derived class
+			// to initialize the dispatch.  Since the construction of a static variable
+			// is atomic since x11, there is no data race here
+			static MessageDispatch<Derived> dispatch;
+			return dispatch;
+		}
 
-		ReceiverID m_myReceiverID;
+		QueueID m_myQueueID;
+		std::optional<ReceiverID> m_defaultReceiverID;
+		messages::DispatchID m_freeClientID{ 1 };
+		std::unordered_map<messages::DispatchID, Client>  m_clientMap;
+
 		bool m_hasReceiver{ false };
 	};
 

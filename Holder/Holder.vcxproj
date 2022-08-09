@@ -156,7 +156,6 @@
     <ClCompile Include="AppLibrary.cpp" />
     <ClCompile Include="BaseClientObject.cpp" />
     <ClCompile Include="BaseMessageHandler.cpp" />
-    <ClCompile Include="BaseProxy.cpp" />
     <ClCompile Include="BaseRequestHandler.cpp" />
     <ClCompile Include="BaseRequestInfo.cpp" />
     <ClCompile Include="BaseRequestIssuer.cpp" />
@@ -164,6 +163,11 @@
     <ClCompile Include="BaseServiceCommClient.cpp" />
     <ClCompile Include="BaseServiceCommService.cpp" />
     <ClCompile Include="BaseServiceConfiguration.cpp" />
+    <ClCompile Include="DTJsonSerializer.cpp" />
+    <ClCompile Include="DTSimpleDict.cpp" />
+    <ClCompile Include="DTSimpleElement.cpp" />
+    <ClCompile Include="DTSimpleList.cpp" />
+    <ClCompile Include="DTUtils.cpp" />
     <ClCompile Include="MessageTypeTags.cpp" />
     <ClCompile Include="ServiceCommMessages.cpp" />
     <ClCompile Include="ServiceMessageLib.cpp" />
@@ -177,6 +181,8 @@
     <ClCompile Include="SharedObjects.cpp" />
     <ClCompile Include="SharedObjectStore.cpp" />
     <ClCompile Include="SingletonConfig.cpp" />
+    <ClCompile Include="SOClientManager.cpp" />
+    <ClCompile Include="SOServiceManager.cpp" />
     <ClCompile Include="StartupTaskManager.cpp" />
     <ClCompile Include="TestServiceAlpha.cpp" />
     <ClCompile Include="TestStarter.cpp" />
@@ -185,8 +191,6 @@
   <ItemGroup>
     <ClInclude Include="AppArgumentHelper.h" />
     <ClInclude Include="AppLibrary.h" />
-    <ClInclude Include="BaseClientObject.h" />
-    <ClInclude Include="BaseMessageDispatch.h" />
     <ClInclude Include="BaseMessageHandler.h" />
     <ClInclude Include="BaseProxy.h" />
     <ClInclude Include="BasePublisher.h" />
@@ -198,14 +202,24 @@
     <ClInclude Include="BaseServiceCommService.h" />
     <ClInclude Include="BaseServiceConfiguration.h" />
     <ClInclude Include="BaseSubscriber.h" />
+    <ClInclude Include="DTConstruct.h" />
+    <ClInclude Include="DTJsonSerializer.h" />
+    <ClInclude Include="DTSimple.h" />
+    <ClInclude Include="DTSimpleDict.h" />
+    <ClInclude Include="DTSimpleElement.h" />
+    <ClInclude Include="DTSimpleList.h" />
+    <ClInclude Include="DTUtils.h" />
     <ClInclude Include="FlatPropertyTable.h" />
     <ClInclude Include="IConnectionHandler.h" />
+    <ClInclude Include="IDataTree.h" />
     <ClInclude Include="IServiceComm.h" />
+    <ClInclude Include="IServiceMethod.h" />
     <ClInclude Include="MessageLib.h" />
     <ClInclude Include="MessageTypeTags.h" />
     <ClInclude Include="NetworkDatatypes.h" />
     <ClInclude Include="QueueManager.h" />
     <ClInclude Include="RequestDeltas.h" />
+    <ClInclude Include="RWLockWrapper.h" />
     <ClInclude Include="ServiceCommMessages.h" />
     <ClInclude Include="ServiceMessageLib.h" />
     <ClInclude Include="BaseServiceObject.h" />
@@ -217,7 +231,7 @@
     <ClInclude Include="IAppObjectFactory.h" />
     <ClInclude Include="IExecutor.h" />
     <ClInclude Include="INetworkService.h" />
-    <ClInclude Include="IProxy.h" />
+    <ClInclude Include="IServiceObject.h" />
     <ClInclude Include="IPublishSubscribe.h" />
     <ClInclude Include="BaseRequestMessages.h" />
     <ClInclude Include="IRequestResponse.h" />
@@ -234,12 +248,12 @@
     <ClInclude Include="RegistrationHelper.h" />
     <ClInclude Include="AppObjectFactoryImpl.h" />
     <ClInclude Include="RegistrationHelperAliases.h" />
-    <ClInclude Include="SharedObjects.h" />
     <ClInclude Include="SharedObjectStore.h" />
-    <ClInclude Include="SharedObjectStoreInterfaces.h" />
     <ClInclude Include="SingletonConfig.h" />
     <ClInclude Include="SingletonConfigBase.h" />
     <ClInclude Include="IStarter.h" />
+    <ClInclude Include="SOClientManager.h" />
+    <ClInclude Include="SOServiceManager.h" />
     <ClInclude Include="StartupTaskManagerInterfaces.h" />
     <ClInclude Include="StartupTaskManager.h" />
     <ClInclude Include="PathFromString.h" />

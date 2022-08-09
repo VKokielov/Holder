@@ -1,10 +1,9 @@
 #pragma once
 
-#include "SharedObjects.h"
+#include "ISharedObject.h"
 #include "ObjectTree.h"
 #include "PathLib.h"
 #include "PathFromString.h"
-#include "SharedObjectStoreInterfaces.h"
 
 #include <cinttypes>
 #include <unordered_map>
@@ -13,6 +12,7 @@
 
 namespace holder::base
 {
+
 
 	class SharedObjectStore
 	{

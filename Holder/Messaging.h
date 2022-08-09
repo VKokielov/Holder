@@ -11,6 +11,7 @@ namespace holder::messages
 
 	using DispatchID = uint32_t;
 	using ReceiverID = uint32_t;
+	using QueueID = uint32_t;
 
 	class MessageException { };
 
@@ -24,7 +25,7 @@ namespace holder::messages
 	{
 	public:
 		// TODO:  Support sending batches
-		virtual bool SendMessage(const std::shared_ptr<IMessage>& pMsg) = 0;
+		virtual bool SendMessage(std::shared_ptr<IMessage> pMsg) = 0;
 	};
 
 	class IMessageListener : public base::IAppObject
@@ -41,6 +42,13 @@ namespace holder::messages
 	{
 	public:
 		virtual bool CanSendMessage(const IMessage& msg) = 0;
+	};
+
+	struct CreateReceiverArgs
+	{
+		std::shared_ptr<IMessageListener> pListener;
+		std::shared_ptr<IMessageFilter> pFilter{};
+		DispatchID dispatchId{ 0 };
 	};
 
 	class IMessageDispatcher : public base::IAppObject

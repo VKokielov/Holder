@@ -1,4 +1,6 @@
 #include "MQDExecutor.h"
+#include "DTUtils.h"
+#include "IAppObjectFactory.h"
 
 namespace impl_ns = holder::messages;
 
@@ -11,12 +13,10 @@ void impl_ns::MQDExecutor::InitExecutor()
 {
 	if (m_myExecutor.load() == base::EXEC_WILDCARD)
 	{
-		auto pMyBase = GetMyMessageDispatcherSharedPtr();
-
-		auto pMe = std::static_pointer_cast<MQDExecutor>(pMyBase);
+		auto pMyBase = GetExecutorSharedPtr();
 
 		m_myExecutor.store(base::ExecutionManager::GetInstance().AddExecutor(m_threadName.c_str(),
-			pMe));
+			pMyBase));
 	}
 }
 
@@ -56,4 +56,24 @@ bool impl_ns::MQDExecutor::Init()
 void impl_ns::MQDExecutor::DeInit()
 {
 
+}
+
+// DefaultMQDExecutor
+std::tuple<std::string, bool> impl_ns::DefaultMQDExecutor::Unpacker::Unpack(const data::IDatum& datum)
+{
+	std::string threadName;
+	if (data::GetDictValue<std::string>(datum, "threadName", threadName)
+		!= data::AccessResult::OK)
+	{
+		throw holder::base::UnpackArgumentsException();
+	}
+
+	bool traceLostMessages;
+	if (data::GetDictValue<bool>(datum, "traceLostMessages", traceLostMessages)
+		!= data::AccessResult::OK)
+	{
+		throw holder::base::UnpackArgumentsException();
+	}
+
+	return std::make_tuple(threadName, traceLostMessages);
 }

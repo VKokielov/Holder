@@ -46,10 +46,29 @@ private:
 	unsigned int m_curIterations;
 };
 
+/*
+template<typename T>
+void printSum(const T& left, const T& right)
+{
+	std::cout << "Sum " << left + right << "\n";
+}
+*/
+
+void printSum(const int& left, const int& right)
+{
+	std::cout << "Sum " << left + right << "\n";
+}
+
+void printSum(const std::string& left, const std::string& right)
+{
+	std::cout << "Sum " << left + right << "\n";
+}
+
 int main()
 {
     std::cout << "Hello World!\n";
 
+	/*
 	static atask::AsyncTaskExecutor asyncExec(5);
 	
 
@@ -96,6 +115,11 @@ int main()
 			pTestTask->Reset();
 		}
 	}
+
+	*/
+
+	printSum(2, 3);
+	printSum(std::string("Two "), std::string("Three"));
 
 }
 

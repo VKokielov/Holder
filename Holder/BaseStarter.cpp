@@ -1,5 +1,4 @@
 #include "BaseStarter.h"
-#include "SharedObjects.h"
 #include "StartupTaskManager.h"
 #include "ExecutionManager.h"
 #include "AppLibrary.h"
@@ -30,18 +29,8 @@ bool impl_ns::BaseStarter::Start()
 		// Create the service and add it to the store
 		ServiceDesc_ serviceDesc;
 
-		// Need to use a lambda because the object will be created as shared
-		auto facMakeService = [&serviceStartDesc]()
-		{
-			return serviceStartDesc.second.pServiceFactory->Create(*serviceStartDesc.second.pServiceConfig);
-		};
-		
-		auto initService = [](const std::shared_ptr<IService>& pService)
-		{
-			pService->OnCreated();
-		};
-
-		auto pService = base::MakeInitializedSharedObjectWithFactory<service::IService>(facMakeService, initService);
+		auto pService = serviceStartDesc.second.pServiceFactory->Create(*serviceStartDesc.second.pServiceConfig);
+		pService->OnCreated();
 
 		// Add to the object store
 		// This should not fail due to name clashes...
@@ -49,8 +38,6 @@ bool impl_ns::BaseStarter::Start()
 		serviceDesc.pService = pService;
 
 		m_serviceMap.emplace(serviceStartDesc.second.servicePath, serviceDesc);
-
-		
 	}
 
 	// Start the startup task manager, making sure to end it when all startup tasks are complete

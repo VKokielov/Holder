@@ -29,9 +29,10 @@ namespace holder::service
 		{
 			std::string servicePath;
 			std::string serviceTypeName;
+			std::string serviceQueueName;
 			std::shared_ptr<base::ITypedAppObjectFactory<IService> >
 				pServiceFactory;
-			std::shared_ptr<IServiceConfiguration>
+			std::shared_ptr<data::IDatum>
 				pServiceConfig;
 		};
 
@@ -46,7 +47,10 @@ namespace holder::service
 	protected:
 		BaseStarter() = default;
 
-		AddServiceResult AddService(const std::shared_ptr<IServiceConfiguration>& pServiceConfiguration);
+		AddServiceResult AddService(const std::shared_ptr<data::IDatum>& pServiceConfiguration);
+
+		messages::QueueID AddQueue(const char* pQueueName, 
+			std::shared_ptr<messages::IMessageDispatcher> pDispatcher);
 
 	private:
 #ifdef _WIN32

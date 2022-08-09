@@ -3,40 +3,26 @@
 #include "IService.h"
 #include "ExecutionManager.h"
 #include "Messaging.h"
-#include "SharedObjects.h"
 #include "SharedObjectStore.h"
 #include "StartupTaskManager.h"
 #include "TypeTagDisp.h"
+#include "BaseServiceObject.h"
 
 #include <type_traits>
 #include <memory>
 #include <mutex>
 #include <sstream>
 
-namespace holder::messages
-{
-	// This forward declaration is used later in a type alias to simplify making base services
-	// with the default dispatcher
-	class MQDExecutor;
-}
-
 namespace holder::service
 {
 
-	template<typename Dispatcher,
-			 typename Base>
-	class BaseService : public Dispatcher,
-		public Base,
+	template<typename Derived,
+		typename ... Bases>
+	class BaseService : public BaseServiceObject<Derived, Bases...>,
+		public IService,
 		public base::startup::ITaskStateListener
 	{
 	private:
-
-		static_assert(std::is_base_of_v<messages::IMessageDispatcher, Dispatcher>,
-			"Dispatcher must implement messages::IMessageDispatcher");
-		static_assert(std::is_base_of_v<base::IExecutor, Dispatcher>,
-			"Dispatcher must implement base::IExecutor");
-		static_assert(std::is_base_of_v<IService, Base>,
-			"Base must inherit from IService");
 
 		struct Dependency_
 		{
@@ -174,24 +160,28 @@ namespace holder::service
 
 	public:
 
-		virtual void OnCreated()
+		void OnCreated() override
 		{
 			AddService();
 			OnDependenciesAdded();
 		}
 
-		// ITaskStateListener
+		// ***ITaskStateListener*** for startup
 		void OnTaskReady(base::startup::StartupTaskID taskId,
 			base::startup::ITaskStateAccessor& taskStates) override
 		{
-			// All dependencies are ready.  Start the executor.  
-			// Only after the executor has started do we mark the sservice as ready
+			// All dependencies are ready.  Add the service to the queue manager by creating
+			// a default receiver
+
 			std::unique_lock lk{ m_stateMutex };
 			if (m_readyTaskID == taskId)
 			{
+				// Create a default receiver (adding myself to my queue and causing a callback
+				// when the queue first executes)
+				messages::BaseMessageHandler<Derived,Bases...>::CreateDefaultReceiver();
+
 				// Set task to running
 				base::startup::StartupTaskManager::GetInstance().RunTask(m_readyTaskID);
-				Dispatcher::InitExecutor();
 			}
 		}
 		
@@ -214,22 +204,8 @@ namespace holder::service
 			}
 		}
 
-		void OnRequestFailed(base::startup::StartupTaskID taskId,
-			base::startup::RequestType requestType,
-			base::startup::RequestFailType failType) override
+		void OnReceiverReady(messages::DispatchID dispatchId)  override
 		{
-
-		}
-
-		// Should be defined in Dispatcher.  Called when the executor has started,
-		// and marks the "ready" task as complete
-		bool Init() override
-		{
-			if (!Dispatcher::Init())
-			{
-				return false;
-			}
-
 			std::unique_lock lk{ m_stateMutex };
 			
 			if (m_autoCompleteStartup)
@@ -241,7 +217,12 @@ namespace holder::service
 
 			return true;
 		}
-		
+
+		void OnRequestFailed(base::startup::StartupTaskID taskId,
+			base::startup::RequestType requestType,
+			base::startup::RequestFailType failType) override
+		{ }
+
 	private:
 		std::shared_ptr<IServiceConfiguration> m_pConfig;
 		std::string m_servicePath;
@@ -254,12 +235,5 @@ namespace holder::service
 		bool m_completedStartup{ false };
 
 	};
-
-	template<typename Base>
-	using MQDBaseService = BaseService<messages::MQDExecutor, Base>;
-
-	template<typename MsgHandler>
-	using MessageDispatch = base::types::TypeTagsDisp<MsgHandler, messages::IMessage,
-		messages::DispatchID>;
 
 }

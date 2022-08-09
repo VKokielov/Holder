@@ -1,8 +1,6 @@
 #pragma once
 
-#include "SharedObjects.h"
 #include "StartupTaskManagerInterfaces.h"
-#include "SharedObjectStoreInterfaces.h"
 #include "IAppObjectFactory.h"
 
 namespace holder::service
@@ -19,9 +17,14 @@ namespace holder::service
 	public:
 		virtual const char* GetServicePath() const = 0;
 		virtual const char* GetServiceTypeName() const = 0;
-		virtual const char* GetServiceThreadName() const = 0;
-		virtual bool TraceLostMessages() const = 0;
 		virtual const IServiceInstanceConfiguration* GetInstanceConfiguration() const = 0;
+	};
+
+	class IQueueConfiguration : public base::IAppArgument
+	{
+
+		virtual const char* GetQueueThreadName() const = 0;
+		virtual bool TraceLostMessages() const = 0;
 	};
 
 	class IService : public base::ISharedObject

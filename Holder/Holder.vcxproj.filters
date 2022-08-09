@@ -48,9 +48,6 @@
     <ClCompile Include="BaseStarter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BaseProxy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BaseMessageHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -99,6 +96,27 @@
     <ClCompile Include="BaseServiceCommService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DTJsonSerializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DTSimpleDict.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DTSimpleElement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DTSimpleList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DTUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SOClientManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SOServiceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAppObject.h">
@@ -117,9 +135,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RaiiLambda.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SharedObjects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SharedObjectStore.h">
@@ -170,9 +185,6 @@
     <ClInclude Include="StartupTaskManagerInterfaces.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SharedObjectStoreInterfaces.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AppObjectFactoryImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -188,16 +200,10 @@
     <ClInclude Include="BaseProxy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BaseMessageHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BaseServiceObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BaseClientObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ITextService.h">
@@ -254,9 +260,6 @@
     <ClInclude Include="MessageTypeTags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BaseMessageDispatch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TimedMessageSender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -294,6 +297,45 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QueueManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTConstruct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTJsonSerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTSimple.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTSimpleDict.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTSimpleElement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTSimpleList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IDataTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IServiceObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SOClientManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IServiceMethod.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RWLockWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SOServiceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

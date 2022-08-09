@@ -2,12 +2,12 @@
 
 #include "BaseMessageHandler.h"
 #include "ServiceMessageLib.h"
-#include "BaseClientObject.h"
 #include "BaseProxy.h"
 #include "IProxy.h"
 #include "TypeTagDisp.h"
 #include "MessageTypeTags.h"
 #include "ExecutionManager.h"
+#include "QueueManager.h"
 
 #include <vector>
 #include <type_traits>
@@ -21,8 +21,8 @@ namespace holder::service
 	class CreateProxyMessage : public messages::IMessage
 	{
 	public:
-		CreateProxyMessage(std::shared_ptr<messages::IMessageDispatcher> pDispatcher)
-			:m_pDispatcher(pDispatcher)
+		CreateProxyMessage(messages::QueueID queueID)
+			:m_queueID(queueID)
 		{ }
 
 		base::types::TypeTag GetTag() const override
@@ -36,7 +36,7 @@ namespace holder::service
 			// This function invokes the CreateProxyLocal function on the service object
 			// in question and stores the result into the associated Promise
 
-			auto pProxy = obj.CreateProxyLocal(std::move(m_pDispatcher));
+			auto pProxy = obj.CreateProxyLocal(m_queueID);
 
 			m_serviceLinkPromise.set_value(pProxy);
 		}
@@ -46,46 +46,84 @@ namespace holder::service
 		{
 			return m_serviceLinkPromise.get_future();
 		}
+
 	private:
-		std::shared_ptr< messages::IMessageDispatcher> m_pDispatcher;
+		messages::QueueID m_queueID;
 		std::promise<std::shared_ptr<IServiceLink> >
 			m_serviceLinkPromise;
 	};
 
-	template<typename D, typename Proxy, typename Client>
-	class BaseServiceObject : public messages::IMessageListener
+	template<typename Derived, typename ... Bases>
+	class BaseServiceObject : public messages::BaseMessageHandler<Derived,
+		Bases...>,
+		public IServiceObject
 	{
 	private:
+		using Client = typename Derived::Client;
+		using Proxy = typename Derived::Proxy;
+
+		using BaseType = messages::BaseMessageHandler<Derived,
+			Bases...>;
+
 		using ObjType = BaseServiceObject<D, Proxy, Client>;
 		static_assert(std::is_base_of_v<BaseProxy, Proxy>, "Proxy must derive from BaseProxy");
-		static_assert(std::is_base_of_v<BaseClientObject, Client>, "Client must derive from BaseClientObject");
+
+		class ServiceObjClient : 
+			public BaseType::BaseClient,
+			public IServiceLink
+		{
+		public:
+
+			ServiceObjClient(messages::QueueID localQueueID,
+				messages::DispatchID localDispatchID,
+				std::shared_ptr<BaseType> pListener,
+				messages::QueueID remoteQueueID,
+				messages::ReceiverID remoteReceiverID)
+				:BaseType::BaseClient(localQueueID, localDispatchID, pListener),
+				m_remoteQueueID(remoteQueueID),
+				m_remoteReceiverID(remoteReceiverID)
+			{
+				auto& queueManager = messages::QueueManager::GetInstance();
+
+				m_pEndpoint = queueManager.CreateEndpoint(remoteQueueID, remoteReceiverID);
+			}
+
+			void OnMessage(const std::shared_ptr<IServiceMessage>& pServiceMessage)
+			{
+				pServiceMessage->Act(*this);
+			}
+			messages::ReceiverID GetReceiverID() const
+			{
+				return BaseType::BaseClient::GetReceiverID();
+			}
+
+			template<typename Msg>
+			void SendMessage(const std::shared_ptr<Msg>& pMessage)
+			{
+				m_pEndpoint->SendMessage(pMessage);
+			}
+
+		private:
+			std::shared_ptr<messages::ISenderEndpoint> m_pEndpoint;
+			messages::QueueID m_remoteQueueID;
+			messages::ReceiverID m_remoteReceiverID;
+		};
+
 	public:
-		void OnServiceMessage(messages::IMessage& rMsg,
+		void OnServiceMessage(const std::shared_ptr<messages::IMessage>& pMsg,
 			messages::DispatchID dispatchID)
 		{
-			Client* pClient{ nullptr };
+			// TODO:  Is there a way to do this without constructing a new shared_ptr?
+			auto pServiceMessage
+				= std::static_pointer_cast<IServiceMessage>(pMsg);
 
-			auto itClient = m_clientMap.find(dispatchID);
-
-			if (itClient != m_clientMap.end())
-			{
-				pClient = &itClient->second;
-			}
-
-			if (!pClient)
-			{
-				return;
-			}
-
-			auto& rServiceMessage = static_cast<IServiceMessage&>(rMsg);
-
-			rServiceMessage.Act(*pClient);
+			BaseType::DispatchToClient<IServiceMessage>(pServiceMessage, dispatchID);
 		}
 
-		void OnDestroyMessage(messages::IMessage& rMsg,
+		void OnDestroyMessage(const std::shared_ptr<messages::IMessage>& pMsg,
 			messages::DispatchID dispatchID)
 		{
-			RemoveClient(dispatchID);
+			BaseType::RemoveClient(dispatchID);
 		}
 
 		void OnCreateProxyMessage(messages::IMessage& rMsg,
@@ -106,159 +144,63 @@ namespace holder::service
 				&BaseServiceObject::OnCreateProxyMessage);
 		}
 
-	protected:
-		BaseServiceObject()
-		{ }
-
-		void SetThreadName(const char* pThreadName)
-		{
-			m_threadName = pThreadName;
-		}
-
-		virtual std::shared_ptr<IMessageListener>
-			GetMyListenerSharedPtr() = 0;
-
-		// Client created callback
-		virtual void OnCreateClient(messages::DispatchID clientID,
-									messages::ReceiverID clientReceiverID,
-									const std::shared_ptr<messages::ISenderEndpoint>&
-										pRemoteEndpoint)
-		{ }
-
-		// Client destroyed callback
-		virtual void OnDestroyClient(messages::DispatchID clientID)
-		{ }
-
-		void SetDispatcher(const std::shared_ptr<messages::IMessageDispatcher>& pLocalDispatcher)
-		{
-			// Create a default receiver and endpoint
-			m_defaultReceiverID = pLocalDispatcher->CreateReceiver(GetMyListenerSharedPtr(),
-				std::shared_ptr<messages::IMessageFilter>(),
-				0);
-
-			m_pDefaultEndpoint = pLocalDispatcher->CreateEndpoint(m_defaultReceiverID);
-			m_pLocalDispatcher = pLocalDispatcher;
-		}
-
 		std::shared_ptr<IServiceLink>
-			CreateProxy_(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
+			CreateProxy(messages::QueueID remoteQueueID) override
 		{
 			// NOTE:  This function acts differently depending on where we are operating
 			// From within the service's thread, it simply calls GetProxyLocal()
-			if (base::ExecutionManager::GetInstance().GetCurrentThreadName()
-				== m_threadName)
+
+			auto& queueManager = messages::QueueManager::GetInstance();
+
+			if (queueManager.IsOnSameThread(remoteQueueID,
+				BaseType::GetQueueID()))
 			{
-				return CreateProxyLocal(pRemoteDispatcher);
+				return CreateProxyLocal(remoteQueueID);
 			}
 
-
-			if (!m_pDefaultEndpoint)
-			{
-				return std::shared_ptr<IServiceLink>();
-			}
-			
 			// Otherwise it uses a promise and a future to execute this same procedure
 			// on the remote thread of the service
 			auto pCreateProxyMessage =
-				std::make_shared<CreateProxyMessage>(pRemoteDispatcher);
+				std::make_shared<CreateProxyMessage>(remoteQueueID);
 
 			auto proxyFuture = pCreateProxyMessage->GetFuture();
 
-			m_pDefaultEndpoint->SendMessage(pCreateProxyMessage);
+			queueManager.SendMessage(BaseType::GetQueueID(), 
+				BaseType::GetDefaultReceiverID());
 
 			proxyFuture.wait();
 
 			return proxyFuture.get();
 		}
+
+	protected:
+		BaseServiceObject(messages::QueueID localQueueID);
+
 	private:
-
 		std::shared_ptr<IServiceLink>
-			CreateProxyLocal(const std::shared_ptr<messages::IMessageDispatcher>& pRemoteDispatcher)
+			CreateProxyLocal(messages::QueueID remoteQueueID)
 		{
-			auto pLocalDispatcher = m_pLocalDispatcher.lock();
-			std::shared_ptr<IServiceLink> pServiceLink;
 			std::shared_ptr<Proxy> pProxy;
+			auto& queueManager = messages::QueueManager::GetInstance();
 
-			if (!pLocalDispatcher)
-			{
-				// Where is the dispatcher?  Can't create proxy
-				return pServiceLink;
-			}
+			pProxy = std::make_shared<Proxy>(remoteQueueID);
+			pProxy->Initialize();
 
-			// We now create a new client object and a proxy to go with it.
-			// We need a sender endpoint for each, but we can only create these after we know the 
-			// receiver ID
+			messages::ReceiverID remoteReceiverID = pProxy->GetDefaultReceiverID();
 
-			messages::DispatchID clientID = m_nextClientID++;
+			// Create a client and a corresponding proxy
+			auto clientID = BaseType::CreateClient(remoteQueueID, remoteReceiverID);
+			ServiceObjClient* pCreatedClient = BaseType::GetClient(clientID);
 
-			// First create a receiver for this client object
-			messages::ReceiverID receiverID
-				= pLocalDispatcher->CreateReceiver(GetMyListenerSharedPtr(),
-					std::shared_ptr<messages::IMessageFilter>(),
-					clientID);
+			pProxy->SetRemote(BaseType::GetQueueID(), 
+				pCreatedClient->GetReceiverID());
 
-			auto pClientEndpoint = pLocalDispatcher->CreateEndpoint(receiverID);
-			// Create a proxy (which will create its own receiver)
-			pProxy = std::make_shared<Proxy>(pRemoteDispatcher, pClientEndpoint);
-			pProxy->CreateReceiver();
-
-			pServiceLink = pProxy;
-
-			// Create the remote sender endpoint for the proxy
-			auto pProxyEndpoint = pProxy->CreateSenderEndpoint();
-
-			// Now create the object
-			auto emplResult = m_clientMap.emplace(std::piecewise_construct,
-				std::forward_as_tuple(clientID),
-				std::forward_as_tuple(static_cast<D&>(*this),
-					clientID,
-					receiverID,
-					pProxyEndpoint));
-
-			OnCreateClient(clientID, receiverID, pProxyEndpoint);
-
-			return pServiceLink;
+			return pProxy;
 		}
-		void RemoveClient(messages::DispatchID clientID)
-		{
-			// Remove a client from the dispatcher and by removing it from the map
-
-			auto itClient = m_clientMap.find(clientID);
-
-			if (itClient == m_clientMap.end())
-			{
-				return;
-			}
-
-			Client& rClient = itClient->second;
-
-			auto pLocalDispatcher = m_pLocalDispatcher.lock();
-
-			if (pLocalDispatcher)
-			{
-				// Remove the client's receiver
-				pLocalDispatcher->RemoveReceiver(rClient.GetReceiverID());
-			}
-
-			// Remove the client
-			m_clientMap.erase(itClient);
-
-			// Callback
-			OnDestroyClient(clientID);
-		}
-
+		
 		friend class CreateProxyMessage;
 
-		std::string m_threadName;
-
-		std::unordered_map<messages::DispatchID, Client> m_clientMap;
-		messages::DispatchID m_nextClientID{ 0 };
-
-		// Local dispatcher
-		std::weak_ptr<messages::IMessageDispatcher>  m_pLocalDispatcher;
-		// Default receiver and endpoint
-		messages::ReceiverID m_defaultReceiverID{};
-		std::shared_ptr<messages::ISenderEndpoint> m_pDefaultEndpoint;
+		messages::QueueID m_queueID;
 	};
 
 

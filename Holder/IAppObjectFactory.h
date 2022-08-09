@@ -1,13 +1,17 @@
 #pragma once
 
 #include "IAppObject.h"
+#include "IDataTree.h"
 
 #include <type_traits>
-// The factories must includ
 #include <memory>
 
 namespace holder::base
 {
+
+	// This exception is raised when a typed object factory cannot unpack its arguments
+	// from an IDatum
+	class UnpackArgumentsException { };
 
 	class IAppObjectFactory
 	{
@@ -20,7 +24,7 @@ namespace holder::base
 	{
 	public:
 		static_assert(std::is_base_of_v<IAppObject, Interface>, "Interface must be derived from IAppObject");
-		virtual std::shared_ptr<Interface> Create(const IAppArgument& args) = 0;
+		virtual std::shared_ptr<Interface> Create(const data::IDatum& args) = 0;
 	};
 
 

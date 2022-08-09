@@ -8,7 +8,6 @@
 
 namespace holder::messages
 {
-	using QueueID = uint32_t;
 
 	class SenderEndpoint : public ISenderEndpoint
 	{
@@ -30,8 +29,19 @@ namespace holder::messages
 
 		const std::shared_ptr<IMessageDispatcher>& GetQueue(const char* pQueueName, QueueID& rQueueId);
 
-		std::shared_ptr<ISenderEndpoint> CreateEndpoint(QueueID queueId);
+		std::shared_ptr<ISenderEndpoint> CreateEndpoint(QueueID queueId, ReceiverID receiverID);
 
+		// Direct send
+		bool SendMessage(QueueID queueID, ReceiverID receiverID,
+			const std::shared_ptr<messages::IMessage>& pMessage);
+
+		// Dispatch interface
+		ReceiverID CreateReceiver(QueueID queueId, const CreateReceiverArgs& recvrArgs);
+		void RemoveReceiver(QueueID queueId, ReceiverID rcvrId);
+		
+		bool IsOnSameThread(QueueID queueIdA, QueueID queueIDB);
+
+		static QueueManager& GetInstance();
 	private:
 		QueueManager();
 
