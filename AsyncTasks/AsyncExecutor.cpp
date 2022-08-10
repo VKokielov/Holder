@@ -10,7 +10,7 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::Run()
 	std::deque<PackagedTask> todoList;
 	std::deque<PackagedTask> unfinishedBusiness;
 
-	while (!m_stopFlag.load())
+	while (!m_stopFlag)
 	{
 		std::vector<TaskCompletionMessage> completionMessages;
 		completionMessages.clear();
@@ -18,10 +18,8 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::Run()
 		todoList.clear();
 		{
 			std::unique_lock lk{ m_mutex };
-			while (m_todoList.empty())
-			{
-				m_cv.wait(lk);
-			}
+			m_cv.wait(lk,[&]{return !m_todoList.empty() | m_stopFlag;});
+			if(m_stopFlag) break;
 
 			std::swap(todoList, m_todoList);
 		}
@@ -81,22 +79,21 @@ void atask::AsyncTaskExecutor::TaskExecutorThread::PostTask(PackagedTask&& task)
 
 void atask::AsyncTaskExecutor::TaskExecutorThread::Join()
 {
-	m_stopFlag.store(true);
+	m_stopFlag = true;
+	m_cv.notify_one();
 	m_thread->join();
 }
 
 atask::AsyncTaskExecutor::AsyncTaskExecutor(size_t threadCount)
 {
-	while (threadCount > 0)
+	for (;threadCount > 0; --threadCount)
 	{
 		m_threads.emplace_back(new TaskExecutorThread(*this));
-		--threadCount;
 	}
-	
 }
 atask::AsyncTaskExecutor::~AsyncTaskExecutor()
 {
-	std::shared_lock lk(m_mutex);
+	m_cv.notify_all();
 	for (auto& thread : m_threads)
 	{
 		thread->Join();
@@ -112,7 +109,7 @@ atask::TaskResult atask::AsyncTaskExecutor::ExecuteGraph(atask::AsyncGraphOrder&
 
 	TaskContext& context = CreateContext();
 	auto retVal = context.RunAllTasks(graph);
-	
+
 	DeleteContext(context.GetContextID());
 	return retVal;
 }

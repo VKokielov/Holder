@@ -57,9 +57,9 @@ namespace atask
 		template<typename F>
 		void GetTasksToExecute(TaskID taskId,
 			F&& taskCallback)
-		{ 
+		{
 			--m_executingTasks;
-
+			m_completedTasks++;
 			for (TaskID taskDepId : m_taskStates[taskId].dependentTasks)
 			{
 				--m_taskStates[taskDepId].dependencyCount;
@@ -94,7 +94,7 @@ namespace atask
 
 		void ClearDependencies(TaskID taskID);
 		void AddDependency(TaskID fromID, TaskID toID);
-
+		void AddDependency(TaskID fromId, std::vector<TaskID>&& toIDs);
 		AsyncGraphOrder ConstructGraph();
 
 	private:

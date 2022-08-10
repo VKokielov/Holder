@@ -83,7 +83,7 @@ namespace atask
 			std::condition_variable m_cv;
 			std::deque<PackagedTask> m_todoList;
 			std::atomic<unsigned long> m_taskLoad{ 0 };
-			std::atomic<bool> m_stopFlag{ false };
+			volatile bool m_stopFlag = false;
 		};
 
 		class TaskContext

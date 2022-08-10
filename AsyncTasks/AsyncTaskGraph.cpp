@@ -16,14 +16,14 @@ atask::AsyncGraphOrder::AsyncGraphOrder(const AsyncGraphBuilder& builder)
 
 		const auto& builderTask = builder.m_vertices[taskId];
 
-		taskStateOrder.dependentTasks.resize(builderTask.vTo.size());
+		taskStateOrder.dependentTasks.reserve(builderTask.vTo.size());
 
 		for (TaskID depTask : builderTask.vTo)
 		{
 			taskStateOrder.dependentTasks.emplace_back(depTask);
 		}
-		
-		taskStateOrder.dependencyCount 
+
+		taskStateOrder.dependencyCount
 			= taskStateOrder.originalDependencyCount
 			= builderTask.vFrom.size();
 
@@ -91,6 +91,14 @@ void atask::AsyncGraphBuilder::AddDependency(TaskID fromId, TaskID toId)
 
 	fromTask.vFrom.emplace(toId);
 	toTask.vTo.emplace(fromId);
+}
+
+void atask::AsyncGraphBuilder::AddDependency(TaskID fromId, std::vector<TaskID>&& toIDs)
+{
+	for(auto&& toId: toIDs)
+	{
+		AddDependency(fromId,toId);
+	}
 }
 
 atask::AsyncGraphOrder atask::AsyncGraphBuilder::ConstructGraph()
