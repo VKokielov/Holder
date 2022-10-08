@@ -261,13 +261,29 @@ impl::ClientMgrResult impl::SOClientManager::AddService(const impl::CMServiceArg
 	lib::RWLockWrapperWrite lock{ m_mutex, m_lockState };
 
 	// Create a new service object
-	auto nextServiceID = m_freeServiceID++;
+	auto nextServiceID = m_freeServiceID;
 
+	lib::PathFromString objPath(args.serviceName.c_str());
+	lib::NodeAdder<CMServiceID> nodeAdder(true);
+
+	lib::NodeResult addResult =
+		lib::TracePath(m_serviceTree, objPath, nodeAdder);
+
+	if (addResult != lib::NodeResult::OK)
+	{
+		return ClientMgrResult::CantAddServiceName;
+	}
+
+	m_serviceTree.SetValue(nodeAdder.GetNodeID(), nextServiceID);
+
+	++m_freeServiceID;
 	auto itService = m_serviceMap.emplace(std::piecewise_construct,
 		std::forward_as_tuple(nextServiceID),
 		std::forward_as_tuple()).first;
 
 	itService->second.args = args;
+
+
 	
 	return ClientMgrResult::OK;
 }

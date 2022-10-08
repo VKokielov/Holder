@@ -3,6 +3,8 @@
 #include "IServiceObject.h"
 #include "IServiceMethod.h"
 #include "Messaging.h"
+#include "ObjectTree.h"
+#include "PathLib.h"
 
 #include <unordered_map>
 #include <shared_mutex>
@@ -47,10 +49,13 @@ namespace holder::service
 	public:
 		ServiceMgrResult AddMethod(const std::shared_ptr<ISOServiceMethod>& pMethod);
 
-		ServiceMgrResult AddService(const char* pPath,
+		ServiceMgrResult AddService(const char* pName,
 			messages::QueueID serviceQueue,
 			const std::shared_ptr<IService>& pService,
 			SMServiceID& serviceID);
+
+		ServiceMgrResult FindService(const char* pName,
+			SMServiceID& serviceID) const;
 
 		ServiceMgrResult PublishService(const char* pMethodName,
 			const char* pRemoteName,
@@ -67,12 +72,17 @@ namespace holder::service
 		static SOServiceManager& GetInstance();
 
 	private:
+		static thread_local lib::LockState m_lockState;
+
 		std::shared_mutex m_mutex;
-		std::unordered_map<MethodID, std::shared_ptr<ISOServiceMethod> > m_methodMap;
-		MethodID m_freeMethodID{ 0 };
+		std::vector<std::shared_ptr<ISOServiceMethod> > m_methods;
+		std::unordered_map<std::string, MethodID> m_methodMap;
 
 		std::unordered_map<SMServiceID, SMService_> m_serviceMap;
 		SMServiceID m_freeServiceID{ 0 };
+
+		// Object tree
+		lib::ObjectTree<SMServiceID> m_serviceTree;
 	};
 
 }

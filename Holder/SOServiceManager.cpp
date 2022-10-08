@@ -1,4 +1,6 @@
 #include "SOServiceManager.h"
+#include "RWLockWrapper.h"
+#include "PathFromString.h"
 
 namespace impl = holder::service;
 
@@ -33,3 +35,76 @@ void impl::SOServiceManager::ServiceMessageReceiver::OnMessage(const std::shared
 	m_pService->OnServiceMessage(*pRawMessage, (SMClientID)dispatchId);
 }
 
+impl::ServiceMgrResult impl::SOServiceManager::AddMethod(const std::shared_ptr<impl::ISOServiceMethod>& pMethod)
+{
+	lib::RWLockWrapperWrite lock{ m_mutex, m_lockState };
+
+	std::string methodName(pMethod->GetMethodName());
+	
+	if (std::find(m_methods.begin(), m_methods.end(), pMethod)
+		!= m_methods.end()
+		|| m_methodMap.count(methodName) > 0)
+	{
+		return ServiceMgrResult::CantAddDuplicate;
+	}
+
+	MethodID methodID = m_methods.size();
+	pMethod->OnAdded(methodID);
+	// Add to the map
+	m_methodMap.emplace(methodName, methodID);
+	m_methods.emplace_back(pMethod);
+}
+
+impl::ServiceMgrResult impl::SOServiceManager::AddService(const char* pServiceName,
+	messages::QueueID serviceQueue,
+	const std::shared_ptr<IService>& pService,
+	SMServiceID& serviceID)
+{
+	lib::RWLockWrapperWrite lock{ m_mutex, m_lockState };
+
+	auto nextServiceID = m_freeServiceID;
+
+	lib::PathFromString objPath(pServiceName);
+	lib::NodeAdder<CMServiceID> nodeAdder(true);
+
+	lib::NodeResult addResult =
+		lib::TracePath(m_serviceTree, objPath, nodeAdder);
+
+	if (addResult != lib::NodeResult::OK)
+	{
+		return ServiceMgrResult::CantAddServiceName;
+	}
+
+	m_serviceTree.SetValue(nodeAdder.GetNodeID(), nextServiceID);
+
+	++m_freeServiceID;
+	m_serviceMap.emplace(std::piecewise_construct,
+		std::forward_as_tuple(nextServiceID),
+		std::forward_as_tuple());
+
+
+}
+
+impl::ServiceMgrResult impl::SOServiceManager::PublishService(const char* pMethodName,
+	const char* pRemoteName,
+	impl::SMServiceID serviceID)
+{
+
+}
+impl::ServiceMgrResult impl::SOServiceManager::SendMessage(SMServiceID serviceID,
+	impl::SMClientID clientID,
+	const std::shared_ptr<ISOClientMessage>& pClientMessage) const
+{
+
+}
+impl::ServiceMgrResult impl::SOServiceManager::DispatchMessage(SMServiceID serviceID,
+	impl::SMClientID clientID,
+	const std::shared_ptr<ISOServiceMessage>& pServiceMessage) const
+{
+
+}
+
+impl::SOServiceManager& GetInstance()
+{
+
+}

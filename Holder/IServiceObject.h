@@ -32,12 +32,15 @@ namespace holder::service
 		ServiceProxyNotCreated,
 		ServiceNotFound,
 		ClientNotFound,
-		CantSendMessageToClient
+		CantSendMessageToClient,
+		CantAddServiceName
 	};
 
 	enum class ServiceMgrResult
 	{
-		OK
+		OK,
+		CantAddDuplicate,
+		CantAddServiceName
 	};
 
 	class IServiceObject : public base::IAppObject
