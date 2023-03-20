@@ -94,7 +94,7 @@ namespace atask
 
 		void ClearDependencies(TaskID taskID);
 		void AddDependency(TaskID fromID, TaskID toID);
-		void AddDependency(TaskID fromId, std::vector<TaskID>&& toIDs);
+		void AddDependency(TaskID fromId, std::vector<TaskID> const& toIDs);
 		AsyncGraphOrder ConstructGraph();
 
 	private:
